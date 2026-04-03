@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SQL_SERVER = os.getenv("SQL_SERVER", "AYAPC")
+SQL_SERVER = os.getenv("SQL_SERVER", "Malek")
 SQL_DATABASE = os.getenv("SQL_DATABASE", "DW_Energie")
 SQL_DRIVER = os.getenv("SQL_DRIVER", "ODBC Driver 17 for SQL Server")
 SQL_TRUSTED_CONNECTION = os.getenv("SQL_TRUSTED_CONNECTION", "yes")
