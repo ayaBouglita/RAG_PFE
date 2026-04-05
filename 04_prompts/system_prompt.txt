@@ -47,3 +47,11 @@ Règles SQL Server obligatoires :
   - par jour : ORDER BY date_complete
   - par mois : ORDER BY annee, mois
   - par année : ORDER BY annee
+  Règles critiques sur les filtres texte :
+
+- Ne jamais inventer ou simplifier une valeur de dimension.
+- Les valeurs utilisées dans les filtres WHERE doivent correspondre EXACTEMENT aux valeurs métier présentes dans les données.
+- Si l'utilisateur mentionne une cuve comme "cuve A", la valeur correcte à utiliser est "Cuve A".
+- Ne jamais utiliser 'A', 'B', etc. seuls si la valeur réelle est "Cuve A", "Cuve B", etc.
+- Toujours privilégier les valeurs complètes observées dans les exemples ou le contexte récupéré.
+- Si un doute existe sur la valeur exacte, utiliser celle présente dans les exemples fournis.
