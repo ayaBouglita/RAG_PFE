@@ -13,21 +13,19 @@ def dataframe_to_records(df):
 
 #Humanise les résultats SQL en texte naturel avec Mistral
 def humanize_results(question: str, sql: str, results: list, columns: list) -> str:
-    prompt = f"""Tu es un assistant IA qui transforme des résultats de base de données en texte naturel compréhensible.
+    prompt = f"""Tu es un assistant IA qui transforme des résultats de base de données en texte naturel.
 
-Question posée: {question}
-
-Requête SQL exécutée: {sql}
-
-Résultats:
-{json.dumps(results, ensure_ascii=False, indent=2, default=str)}
-
+Question: {question}
+SQL: {sql}
+Résultats ({len(results)} lignes): {json.dumps(results, ensure_ascii=False, indent=2, default=str)}
 Colonnes: {columns}
 
-Tâche: 
-Écris une réponse naturelle et compréhensible en français qui résume les résultats de cette requête. 
-Soit concis et clair. Utilise les chiffres et données des résultats.
-Réponse naturelle uniquement, pas de format tableau ou code."""
+Tâche - Écris une réponse INTELLIGENTE et NATURELLE en français:
+- Si c'est 1 résultat: affiche le chiffre/données clairement
+- Si c'est 2-5 résultats: liste-les avec contexte
+- Si c'est 6+ résultats: résume les points clés + tendances (pas besoin de tous les lister)
+- Utilise les vraies données de la réponse SQL
+- Pas de tableau, pas de code, juste du texte naturel"""
 
     try:
         payload = {
@@ -47,6 +45,37 @@ Réponse naturelle uniquement, pas de format tableau ou code."""
     except Exception as e:
         return f"Erreur lors de la humanisation: {str(e)}"
 
+#Humanise les erreurs SQL en texte naturel avec Mistral
+def humanize_error(question: str, error_message: str) -> str:
+    prompt = f"""Tu es un assistant IA.
+
+Question posée: {question}
+
+Erreur rencontrée: {error_message}
+
+Tâche:
+Explique cette erreur en langage naturel compréhensible. 
+Dis que je ne peux pas répondre à cette question pour l'instant et propose une alternative si possible.
+Sois concis. Réponse naturelle uniquement."""
+
+    try:
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False
+        }
+        response = requests.post(
+            OLLAMA_URL,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(payload),
+            timeout=120
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get("response", "").strip()
+    except Exception as e:
+        return f"Désolé, je n'ai pas pu répondre à votre question: {error_message}"
+
 #Fonction principale pour poser une question, générer le SQL correspondant,
 def ask(question: str):
     generation = generate_sql(question)
@@ -63,7 +92,16 @@ def ask(question: str):
         }
 
      #Exécute la requête sur SQL Server
-    df = execute_select_query(generation["sql"])
+    try:
+        df = execute_select_query(generation["sql"])
+    except Exception as e:
+        return {
+            "question": question,
+            "sql": generation["sql"],
+            "valid": False,
+            "error": f"Erreur d'exécution: {str(e)}",
+            "rows": []
+        }
 
     return {
         "question": question,
@@ -91,9 +129,12 @@ if __name__ == "__main__":
         humanized = humanize_results(
             question, 
             result["sql"], 
-            result["rows"][:20], 
+            result["rows"],
             result["columns"]
         )
         print(humanized)
     else:
         print("Erreur :", result["error"])
+        print("\n=== Explication humanisée ===\n")
+        explanation = humanize_error(question, result["error"])
+        print(explanation)

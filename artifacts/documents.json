@@ -2,481 +2,191 @@
   {
     "source": "schema_description.md",
     "type": "markdown",
-    "text": "# Schéma DW_Energie\n\n## Table : dbo.Fact_Fuel\nRôle : table de faits contenant les mesures de consommation et de volume de fuel.\n\nColonnes :\n- id_date\n- id_cuve\n- id_type_fuel\n- consommation_en_tonne\n- volume_en_tonne\n## Table : dbo.DIM_DATE\nRôle : dimension temps.\n\nColonnes :\n- id_date\n- date_complete\n- jour\n- mois\n- annee\n## Table : dbo.Dim_Cuve\nRôle : dimension des cuves.\n\nColonnes :\n- id_cuve\n- numero_cuve\n- nom_cuve\n- capacite_max\n- date_construction\n## Grain de la table Fact_Fuel\n\nUne ligne représente une mesure de consommation et de volume pour :\n- une date\n- une cuve\n- un type de fuel\n## Grain de la table Fact_Fuel\nUne ligne représente une mesure de consommation et de volume pour une date donnée, une cuve donnée et un type de fuel donné."
-  },
-  {
-    "source": "relationships.md",
-    "type": "markdown",
-    "text": "# Relations entre les tables\n\n- Fact_Fuel.id_date = DIM_DATE.id_date\n- Fact_Fuel.id_cuve = Dim_Cuve.id_cuve\n- Fact_Fuel.id_type_fuel = Dim_Type_Fuel.id_type_fuel"
-  },
-  {
-    "source": "sample_data.md",
-    "type": "markdown",
-    "text": "# Exemples de données\n\n## Dim_Type_Fuel\n- 1 = Fioul lourd = HFO 380\n- 2 = Fioul leger = MGO DMA\n\n## Dim_Cuve\n- 1 = C-001 = Cuve A = capacité 60\n- 2 = C-002 = Cuve B = capacité 45\n- 3 = C-003 = Cuve C = capacité 35\n\n## Fact_Fuel\nExemples :\n- 20250101, cuve 1, fuel 1, consommation 0.494, volume 13.385\n- 20250101, cuve 2, fuel 1, consommation 0.2964, volume 8.031\n- 20250101, cuve 3, fuel 2, consommation 0.1976, volume 5.354\n# Exemples de données - DW_Energie\n\nCe document contient des exemples réels issus des tables pour aider à comprendre les valeurs manipulées par le système.\n\n---\n\n## 🔷 Types de fuel (Dim_Type_Fuel)\n\n| id_type_fuel | type_fuel   | nom_fuel |\n|--------------|------------|----------|\n| 1            | Fioul lourd | HFO 380  |\n| 2            | Fioul leger | MGO DMA  |\n\n👉 Interprétation :\n- HFO 380 = fioul lourd\n- MGO DMA = fioul léger\n\n---\n\n## 🔷 Cuves (Dim_Cuve)\n\n| id_cuve | numero_cuve | nom_cuve | capacite_max |\n|--------|-------------|----------|--------------|\n| 1      | C-001       | Cuve A   | 60           |\n| 2      | C-002       | Cuve B   | 45           |\n| 3      | C-003       | Cuve C   | 35           |\n\n👉 Interprétation :\n- Chaque cuve a une capacité maximale (en tonne)\n- Les cuves sont identifiées par un numéro et un nom\n\n---\n\n## 🔷 Dates disponibles (DIM_DATE)\n\n### Années disponibles :\n- 2025\n- 2026\n\n### Mois disponibles :\n\n| annee | mois |\n|------|------|\n| 2025 | 1 à 12 |\n| 2026 | 1 |\n\n👉 Interprétation :\n- Les données couvrent toute l’année 2025\n- Et le début de 2026\n\n---\n\n## 🔷 Exemple de données Fact_Fuel\n\n| id_date  | id_cuve | id_type_fuel | consommation_en_tonne | volume_en_tonne |\n|----------|--------|--------------|------------------------|-----------------|\n| 20250101 | 1      | 1            | 0.494                  | 13.385          |\n| 20250101 | 2      | 1            | 0.2964                 | 8.031           |\n| 20250101 | 3      | 2            | 0.1976                 | 5.354           |\n| 20250102 | 1      | 1            | 1.6075                 | 12.891          |\n| 20250102 | 2      | 1            | 0.9645                 | 7.7346          |\n| 20250102 | 3      | 2            | 0.643                  | 5.1564          |\n\n👉 Interprétation :\n- Chaque ligne correspond à :\n  - une date\n  - une cuve\n  - un type de fuel\n- consommation_en_tonne = quantité consommée\n- volume_en_tonne = volume associé (à confirmer métier)\n\n---\n\n## 🔷 Correspondances utiles (pour le futur assistant)\n\n- Cuve A = C-001 = id_cuve 1\n- Cuve B = C-002 = id_cuve 2\n- Cuve C = C-003 = id_cuve 3\n\n- Fioul lourd = HFO 380 = id_type_fuel 1\n- Fioul léger = MGO DMA = id_type_fuel 2\n\n---\n\n## 🔷 Exemple de jointure logique\n\n```sql\nSELECT *\nFROM dbo.Fact_Fuel f\nJOIN dbo.DIM_DATE d ON f.id_date = d.id_date\nJOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve\nJOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel;"
-  },
-  {
-    "source": "business_dictionary.md",
-    "type": "markdown",
-    "text": "# Dictionnaire métier - DW_Energie\n\n## Mesures principales\n\n### consommation_en_tonne\nQuantité consommée de fuel exprimée en tonne.\nCette mesure est utilisée pour calculer :\n- la consommation totale\n- la consommation moyenne\n- la consommation minimale\n- la consommation maximale\n- les évolutions temporelles\n- les comparaisons entre cuves\n- les comparaisons entre types de fuel\n\n### volume_en_tonne\nVolume exprimé en tonne associé à la mesure.\nCette mesure peut être utilisée pour :\n- calculer le volume total\n- calculer le volume moyen\n- suivre l’évolution du volume\n- comparer les volumes par cuve ou par fuel\n\nAttention : l’interprétation métier exacte de `volume_en_tonne` doit être confirmée.\n\n---\n\n## Dimensions principales\n\n### date_complete\nDate réelle de la mesure.\n\n### jour\nJour du mois.\n\n### mois\nMois de la mesure.\n\n### annee\nAnnée de la mesure.\n\n### nom_cuve\nNom métier de la cuve.\n\n### numero_cuve\nCode technique ou identifiant visible de la cuve.\n\n### capacite_max\nCapacité maximale théorique de la cuve.\n\n### type_fuel\nCatégorie métier du carburant.\n\n### nom_fuel\nNom précis du fuel.\n\n---\n\n## Entités métier\n\n### Cuve\nRéservoir de stockage identifié par :\n- id_cuve\n- numero_cuve\n- nom_cuve\n\n### Fuel\nType de carburant identifié par :\n- id_type_fuel\n- type_fuel\n- nom_fuel\n\n### Temps\nDimension temporelle identifiée par :\n- id_date\n- date_complete\n- jour\n- mois\n- annee"
-  },
-  {
-    "source": "business_rules.md",
-    "type": "markdown",
-    "text": "# Règles métier - DW_Energie\n\n## Règles de calcul\n\n### Consommation totale\nSomme de `consommation_en_tonne`.\n\n### Volume total\nSomme de `volume_en_tonne`.\n\n### Consommation moyenne\nMoyenne de `consommation_en_tonne`.\n\n### Volume moyen\nMoyenne de `volume_en_tonne`.\n\n### Consommation minimale\nMinimum de `consommation_en_tonne`.\n\n### Consommation maximale\nMaximum de `consommation_en_tonne`.\n\n### Analyse journalière\nAgrégation par `date_complete`.\n\n### Analyse mensuelle\nAgrégation par `annee, mois`.\n\n### Analyse annuelle\nAgrégation par `annee`.\n\n### Analyse par cuve\nAgrégation par `nom_cuve` ou `numero_cuve`.\n\n### Analyse par type de fuel\nAgrégation par `type_fuel` ou `nom_fuel`.\n\n### Part relative\nCalcul en pourcentage :\n(valeur / total) * 100\n\n### Taux d’évolution\nCalcul :\n((valeur_courante - valeur_precedente) / valeur_precedente) * 100\n\nToujours sécuriser la division avec `NULLIF`.\n\n---\n\n## Relations logiques\n\n- Fact_Fuel.id_date = DIM_DATE.id_date\n- Fact_Fuel.id_cuve = Dim_Cuve.id_cuve\n- Fact_Fuel.id_type_fuel = Dim_Type_Fuel.id_type_fuel\n\n---\n\n## Limitations connues\n\nLe schéma actuel permet :\n- agrégations\n- comparaisons\n- évolutions temporelles\n- classements\n- ratios simples\n\nLe schéma actuel ne permet pas directement :\n- explication causale des variations\n- prévisions fiables\n- analyse horaire\n- mouvements d’entrée/sortie détaillés\n- livraisons ou approvisionnements"
-  },
-  {
-    "source": "intents_catalog.md",
-    "type": "markdown",
-    "text": "# Catalogue des intentions utilisateur\n\n## Intention : consommation_totale\nQuestions possibles :\n- Quelle est la consommation totale ?\n- Donne-moi la somme de consommation.\n- Quelle quantité totale a été consommée ?\n\n## Intention : consommation_journaliere\nQuestions possibles :\n- Quelle est la consommation journalière ?\n- Donne-moi la consommation par jour.\n- Montre l’évolution quotidienne de la consommation.\n\n## Intention : consommation_mensuelle\nQuestions possibles :\n- Quelle est la consommation mensuelle ?\n- Donne-moi la consommation par mois.\n- Montre l’évolution mensuelle.\n\n## Intention : consommation_annuelle\nQuestions possibles :\n- Quelle est la consommation annuelle ?\n- Donne-moi la consommation par année.\n\n## Intention : consommation_par_cuve\nQuestions possibles :\n- Quelle cuve consomme le plus ?\n- Donne-moi la consommation par cuve.\n- Compare les cuves.\n\n## Intention : consommation_par_fuel\nQuestions possibles :\n- Quel fuel est le plus consommé ?\n- Donne-moi la consommation par type de fuel.\n- Compare fuel lourd et fuel léger.\n\n## Intention : moyenne\nQuestions possibles :\n- Quelle est la consommation moyenne ?\n- Donne-moi la moyenne par mois.\n- Quelle est la moyenne par cuve ?\n\n## Intention : min_max\nQuestions possibles :\n- Quel est le minimum ?\n- Quel est le maximum ?\n- Quel jour a la plus forte consommation ?\n\n## Intention : evolution\nQuestions possibles :\n- Quelle est l’évolution de la consommation ?\n- Donne-moi la variation jour par jour.\n- Quelle est la tendance mensuelle ?\n\n## Intention : part_relative\nQuestions possibles :\n- Quelle est la part de chaque cuve ?\n- Quel pourcentage représente le fuel lourd ?\n- Donne-moi la contribution de chaque type de fuel.\n\n## Intention : capacite_utilisation\nQuestions possibles :\n- Quel est le taux d’utilisation des cuves ?\n- Compare le volume à la capacité maximale."
+    "text": "# Schéma DW_Energie\n\n## Table : dbo.Fact_Fuel\nRôle : table de faits contenant les mesures de consommation et de volume de fuel.\n\nColonnes :\n- id_date\n- id_cuve\n- id_type_fuel\n- consommation_en_tonne\n- Volume_cuve_en_Tonne\n## Table : dbo.DIM_DATE\nRôle : dimension temps.\n\nColonnes :\n- id_date\n- date_complete\n- jour\n- mois\n- annee\n## Table : dbo.Dim_Cuve\nRôle : dimension des cuves.\n\nColonnes :\n- id_cuve\n- numero_cuve\n- nom_cuve\n- capacite_max\n- date_construction\n## Grain de la table Fact_Fuel\n\nUne ligne représente une mesure de consommation et de volume pour :\n- une date\n- une cuve\n- un type de fuel\n## Grain de la table Fact_Fuel\nUne ligne représente une mesure de consommation et de volume pour une date donnée, une cuve donnée et un type de fuel donné."
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_001\", \"question\": \"Quelle est la consommation totale ?\", \"intent\": \"consommation_totale\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule la somme totale de la consommation sur toutes les lignes de Fact_Fuel.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"ex_002\", \"question\": \"Quel est le volume total ?\", \"intent\": \"volume_total\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"volume_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(volume_en_tonne) AS volume_total_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule le volume total sur toutes les lignes de Fact_Fuel.\"}"
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_002\", \"question\": \"Quel est le volume total ?\", \"intent\": \"volume_total\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"Volume_cuve_en_Tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(Volume_cuve_en_Tonne) AS volume_total_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule le volume total sur toutes les lignes de Fact_Fuel.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_003\", \"question\": \"Quelle est la consommation moyenne ?\", \"intent\": \"consommation_moyenne\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"AVG\", \"sql\": \"SELECT AVG(consommation_en_tonne) AS consommation_moyenne_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule la moyenne globale de consommation.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_004\", \"question\": \"Quel est le minimum de consommation ?\", \"intent\": \"consommation_min\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"MIN\", \"sql\": \"SELECT MIN(consommation_en_tonne) AS consommation_min_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Retourne la plus petite consommation observée.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_005\", \"question\": \"Quel est le maximum de consommation ?\", \"intent\": \"consommation_max\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"MAX\", \"sql\": \"SELECT MAX(consommation_en_tonne) AS consommation_max_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Retourne la plus grande consommation observée.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"ex_006\", \"question\": \"Quelle est la consommation journalière ?\", \"intent\": \"consommation_journaliere\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY d.date_complete;\", \"explanation\": \"Calcule la consommation totale pour chaque jour.\"}"
-  },
-  {
-    "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"ex_007\", \"question\": \"Quel est le volume journalier ?\", \"intent\": \"volume_journalier\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"volume_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, SUM(f.volume_en_tonne) AS volume_total_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY d.date_complete;\", \"explanation\": \"Calcule le volume total pour chaque jour.\"}"
-  },
-  {
-    "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_008\", \"question\": \"Quelle est la consommation mensuelle ?\", \"intent\": \"consommation_mensuelle\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"annee\", \"mois\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.annee, d.mois ORDER BY d.annee, d.mois;\", \"explanation\": \"Calcule la consommation totale par mois.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_009\", \"question\": \"Quelle est la consommation annuelle ?\", \"intent\": \"consommation_annuelle\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"annee\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.annee ORDER BY d.annee;\", \"explanation\": \"Calcule la consommation totale par année.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_010\", \"question\": \"Quelle est la consommation par cuve ?\", \"intent\": \"consommation_par_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Compare la consommation totale entre les cuves.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_011\", \"question\": \"Quelle est la consommation par type de fuel ?\", \"intent\": \"consommation_par_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY t.nom_fuel ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Compare la consommation totale entre les types de fuel.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_012\", \"question\": \"Quelle est la consommation moyenne par cuve ?\", \"intent\": \"consommation_moyenne_par_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"AVG\", \"sql\": \"SELECT c.nom_cuve, AVG(f.consommation_en_tonne) AS consommation_moyenne_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve ORDER BY consommation_moyenne_tonne DESC;\", \"explanation\": \"Calcule la consommation moyenne pour chaque cuve.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_013\", \"question\": \"Quelle est la consommation moyenne par fuel ?\", \"intent\": \"consommation_moyenne_par_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"AVG\", \"sql\": \"SELECT t.nom_fuel, AVG(f.consommation_en_tonne) AS consommation_moyenne_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY t.nom_fuel ORDER BY consommation_moyenne_tonne DESC;\", \"explanation\": \"Calcule la consommation moyenne pour chaque type de fuel.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_014\", \"question\": \"Quel jour a la plus forte consommation ?\", \"intent\": \"jour_max_consommation\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 1 d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Retourne le jour avec la plus forte consommation totale.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_015\", \"question\": \"Quel jour a la plus faible consommation ?\", \"intent\": \"jour_min_consommation\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 1 d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY consommation_totale_tonne ASC;\", \"explanation\": \"Retourne le jour avec la plus faible consommation totale.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_016\", \"question\": \"Quelle cuve consomme le plus ?\", \"intent\": \"cuve_max_consommation\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 1 c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Retourne la cuve qui consomme le plus.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_017\", \"question\": \"Quel fuel est le plus consommé ?\", \"intent\": \"fuel_max_consommation\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 1 t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY t.nom_fuel ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Retourne le fuel le plus consommé.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_018\", \"question\": \"Quelle est l'évolution journalière de la consommation ?\", \"intent\": \"evolution_journaliere\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY d.date_complete;\", \"explanation\": \"Retourne la série temporelle journalière de consommation.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_019\", \"question\": \"Quelle est la variation jour par jour ?\", \"intent\": \"variation_journaliere\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+LAG\", \"sql\": \"WITH daily AS (SELECT d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete) SELECT date_complete, consommation_totale_tonne, LAG(consommation_totale_tonne) OVER (ORDER BY date_complete) AS consommation_jour_precedent, consommation_totale_tonne - LAG(consommation_totale_tonne) OVER (ORDER BY date_complete) AS variation_absolue FROM daily ORDER BY date_complete;\", \"explanation\": \"Calcule la variation absolue de consommation entre un jour et le jour précédent.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_020\", \"question\": \"Quel est le taux d'évolution journalier ?\", \"intent\": \"taux_evolution_journalier\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+LAG+RATIO\", \"sql\": \"WITH daily AS (SELECT d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete) SELECT date_complete, consommation_totale_tonne, LAG(consommation_totale_tonne) OVER (ORDER BY date_complete) AS valeur_precedente, ((consommation_totale_tonne - LAG(consommation_totale_tonne) OVER (ORDER BY date_complete)) / NULLIF(LAG(consommation_totale_tonne) OVER (ORDER BY date_complete), 0)) * 100.0 AS taux_evolution_pct FROM daily ORDER BY date_complete;\", \"explanation\": \"Calcule le pourcentage d'évolution de consommation entre un jour et le jour précédent.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_021\", \"question\": \"Quelle est la part de chaque cuve dans la consommation totale ?\", \"intent\": \"part_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+RATIO\", \"sql\": \"WITH total_global AS (SELECT SUM(consommation_en_tonne) AS total_tonne FROM dbo.Fact_Fuel) SELECT c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne, (SUM(f.consommation_en_tonne) / NULLIF(tg.total_tonne, 0)) * 100.0 AS part_pct FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve CROSS JOIN total_global tg GROUP BY c.nom_cuve, tg.total_tonne ORDER BY part_pct DESC;\", \"explanation\": \"Calcule la contribution de chaque cuve à la consommation totale.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_022\", \"question\": \"Quelle est la part de chaque fuel dans la consommation totale ?\", \"intent\": \"part_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+RATIO\", \"sql\": \"WITH total_global AS (SELECT SUM(consommation_en_tonne) AS total_tonne FROM dbo.Fact_Fuel) SELECT t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne, (SUM(f.consommation_en_tonne) / NULLIF(tg.total_tonne, 0)) * 100.0 AS part_pct FROM dbo.Fact_Fuel f JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel CROSS JOIN total_global tg GROUP BY t.nom_fuel, tg.total_tonne ORDER BY part_pct DESC;\", \"explanation\": \"Calcule la contribution de chaque fuel à la consommation totale.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"ex_023\", \"question\": \"Quel est le taux d'utilisation moyen de chaque cuve ?\", \"intent\": \"taux_utilisation_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\", \"capacite_max\"], \"metrics\": [\"volume_en_tonne\"], \"aggregation\": \"AVG+RATIO\", \"sql\": \"SELECT c.nom_cuve, AVG(f.volume_en_tonne) AS volume_moyen_tonne, c.capacite_max, (AVG(f.volume_en_tonne) / NULLIF(c.capacite_max, 0)) * 100.0 AS taux_utilisation_pct FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve, c.capacite_max ORDER BY taux_utilisation_pct DESC;\", \"explanation\": \"Compare le volume moyen à la capacité maximale de chaque cuve. L'interprétation métier de volume_en_tonne doit être confirmée.\"}"
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_023\", \"question\": \"Quel est le taux d'utilisation moyen de chaque cuve ?\", \"intent\": \"taux_utilisation_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\", \"capacite_max\"], \"metrics\": [\"Volume_cuve_en_Tonne\"], \"aggregation\": \"AVG+RATIO\", \"sql\": \"SELECT c.nom_cuve, AVG(f.Volume_cuve_en_Tonne) AS volume_moyen_tonne, c.capacite_max, (AVG(f.Volume_cuve_en_Tonne) / NULLIF(c.capacite_max, 0)) * 100.0 AS taux_utilisation_pct FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve, c.capacite_max ORDER BY taux_utilisation_pct DESC;\", \"explanation\": \"Compare le volume moyen à la capacité maximale de chaque cuve. L'interprétation métier de Volume_cuve_en_Tonne doit être confirmée.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_024\", \"question\": \"Quelles sont les 3 cuves les plus consommatrices ?\", \"intent\": \"top3_cuves\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 3 c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY c.nom_cuve ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Retourne les 3 cuves avec la plus forte consommation.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_025\", \"question\": \"Quels sont les 3 jours avec la plus forte consommation ?\", \"intent\": \"top3_jours\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 3 d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY consommation_totale_tonne DESC;\", \"explanation\": \"Retourne les 3 jours de plus forte consommation.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_026\", \"question\": \"Quelle est la consommation de la cuve A ?\", \"intent\": \"consommation_cuve_filtre\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+FILTER\", \"sql\": \"SELECT c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve WHERE c.nom_cuve = 'Cuve A' GROUP BY c.nom_cuve;\", \"explanation\": \"Calcule la consommation totale de la cuve A.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_027\", \"question\": \"Quelle est la consommation du fuel lourd ?\", \"intent\": \"consommation_fuel_filtre\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+FILTER\", \"sql\": \"SELECT t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel WHERE t.nom_fuel = 'HFO 380' GROUP BY t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale du fuel HFO 380.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_028\", \"question\": \"Quelle est la consommation totale en janvier 2025 ?\", \"intent\": \"consommation_periode\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\"], \"dimensions\": [\"annee\", \"mois\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+FILTER\", \"sql\": \"SELECT SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date WHERE d.annee = 2025 AND d.mois = 1;\", \"explanation\": \"Calcule la consommation totale sur janvier 2025.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_029\", \"question\": \"Quelle est la consommation mensuelle par cuve ?\", \"intent\": \"consommation_mensuelle_par_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"annee\", \"mois\", \"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY d.annee, d.mois, c.nom_cuve ORDER BY d.annee, d.mois, c.nom_cuve;\", \"explanation\": \"Calcule la consommation totale par mois et par cuve.\"}"
   },
   {
     "source": "sql_examples.jsonl",
-    "type": "jsonl_record",
+    "type": "sql_example",
     "text": "{\"id\": \"ex_030\", \"question\": \"Quelle est la consommation mensuelle par fuel ?\", \"intent\": \"consommation_mensuelle_par_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"annee\", \"mois\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY d.annee, d.mois, t.nom_fuel ORDER BY d.annee, d.mois, t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale par mois et par type de fuel.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_001\", \"type\": \"schema\", \"title\": \"Table de faits Fact_Fuel\", \"content\": \"La table dbo.Fact_Fuel contient les mesures principales de l'analyse fuel. Chaque ligne représente une mesure pour une date, une cuve et un type de fuel. Les colonnes principales sont id_date, id_cuve, id_type_fuel, consommation_en_tonne et volume_en_tonne.\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_031\", \"question\": \"Quelle est l'évolution de la consommation de la cuve A ?\", \"intent\": \"evolution_consommation_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"date_complete\", \"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, SUM(f.consommation_en_tonne) AS consommation_totale FROM [DW_Energie].[dbo].[Fact_Fuel] f JOIN [DW_Energie].[dbo].[DIM_DATE] d ON f.id_date = d.id_date JOIN [DW_Energie].[dbo].[Dim_Cuve] c ON f.id_cuve = c.id_cuve WHERE c.nom_cuve = 'Cuve A' GROUP BY d.date_complete ORDER BY d.date_complete;\", \"explanation\": \"Calcule l'évolution de la consommation de la cuve A jour par jour en agrégeant les données par date.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_002\", \"type\": \"schema\", \"title\": \"Dimension temps DIM_DATE\", \"content\": \"La table dbo.DIM_DATE est la dimension temps. Elle permet les analyses journalières, mensuelles et annuelles via les colonnes date_complete, jour, mois et annee.\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_032\", \"question\": \"Quelle est l'évolution de la consommation du fuel HFO 380 ?\", \"intent\": \"evolution_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"date_complete\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM+WINDOW\", \"sql\": \"SELECT d.date_complete, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_jour, SUM(SUM(f.consommation_en_tonne)) OVER (PARTITION BY t.nom_fuel ORDER BY d.date_complete ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS consommation_cumulative FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel WHERE t.nom_fuel = 'HFO 380' GROUP BY d.date_complete, t.nom_fuel ORDER BY d.date_complete;\", \"explanation\": \"Calcule l'évolution cumulative de la consommation pour un type de fuel.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_003\", \"type\": \"schema\", \"title\": \"Dimension cuve Dim_Cuve\", \"content\": \"La table dbo.Dim_Cuve décrit les cuves. Elle contient id_cuve, numero_cuve, nom_cuve, capacite_max et date_construction. Elle permet les analyses par cuve et les calculs de capacité.\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_033\", \"question\": \"Quelle est la consommation totale par cuve et par fuel ?\", \"intent\": \"consommation_par_cuve_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_cuve\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT c.nom_cuve, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY c.nom_cuve, t.nom_fuel ORDER BY c.nom_cuve, t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison de cuve et de type de fuel.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_004\", \"type\": \"schema\", \"title\": \"Dimension fuel Dim_Type_Fuel\", \"content\": \"La table dbo.Dim_Type_Fuel décrit les types de fuel. Elle contient id_type_fuel, type_fuel et nom_fuel. Exemples connus : HFO 380 pour le fioul lourd et MGO DMA pour le fioul léger.\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_034\", \"question\": \"Quelle est la consommation totale par jour et par cuve ?\", \"intent\": \"consommation_par_jour_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"date_complete\", \"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY d.date_complete, c.nom_cuve ORDER BY d.date_complete, c.nom_cuve;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison de jour et de cuve.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_005\", \"type\": \"relationship\", \"title\": \"Relations logiques du schéma\", \"content\": \"Les relations logiques autorisées sont Fact_Fuel.id_date = DIM_DATE.id_date, Fact_Fuel.id_cuve = Dim_Cuve.id_cuve et Fact_Fuel.id_type_fuel = Dim_Type_Fuel.id_type_fuel. Même si les foreign keys ne sont pas définies physiquement, ces jointures sont utilisées pour l'analyse.\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_035\", \"question\": \"Quelle est la consommation totale par jour et par fuel ?\", \"intent\": \"consommation_par_jour_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"date_complete\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY d.date_complete, t.nom_fuel ORDER BY d.date_complete, t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison de jour et de type de fuel.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_006\", \"type\": \"metric\", \"title\": \"Définition de la consommation totale\", \"content\": \"La consommation totale correspond à la somme de la colonne consommation_en_tonne dans la table Fact_Fuel. Le calcul standard utilise SUM(consommation_en_tonne).\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_036\", \"question\": \"Quelle est la consommation totale par mois et par cuve ?\", \"intent\": \"consommation_par_mois_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"annee\", \"mois\", \"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY d.annee, d.mois, c.nom_cuve ORDER BY d.annee, d.mois, c.nom_cuve;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison de mois et de cuve.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_007\", \"type\": \"metric\", \"title\": \"Définition du volume total\", \"content\": \"Le volume total correspond à la somme de la colonne volume_en_tonne dans la table Fact_Fuel. Le calcul standard utilise SUM(volume_en_tonne).\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_037\", \"question\": \"Quelle est la consommation totale par mois et par fuel ?\", \"intent\": \"consommation_par_mois_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"annee\", \"mois\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY d.annee, d.mois, t.nom_fuel ORDER BY d.annee, d.mois, t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison de mois et de type de fuel.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_008\", \"type\": \"metric\", \"title\": \"Définition de la moyenne\", \"content\": \"La moyenne de consommation se calcule avec AVG(consommation_en_tonne). La moyenne de volume se calcule avec AVG(volume_en_tonne).\"}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_038\", \"question\": \"Quelle est la consommation totale par année et par cuve ?\", \"intent\": \"consommation_par_annee_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Cuve\"], \"dimensions\": [\"annee\", \"nom_cuve\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, c.nom_cuve, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Cuve c ON f.id_cuve = c.id_cuve GROUP BY d.annee, c.nom_cuve ORDER BY d.annee, c.nom_cuve;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison d'année et de cuve.\"}"
   },
   {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_009\", \"type\": \"metric\", \"title\": \"Définition du minimum et du maximum\", \"content\": \"Le minimum et le maximum de consommation utilisent MIN(consommation_en_tonne) et MAX(consommation_en_tonne). Les mêmes principes s'appliquent au volume.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_010\", \"type\": \"time_rule\", \"title\": \"Analyse journalière\", \"content\": \"Une analyse journalière groupe les résultats par DIM_DATE.date_complete. Cette règle s'applique aux séries temporelles quotidiennes, aux évolutions et aux comparaisons jour par jour.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_011\", \"type\": \"time_rule\", \"title\": \"Analyse mensuelle\", \"content\": \"Une analyse mensuelle groupe les résultats par DIM_DATE.annee et DIM_DATE.mois. Cette règle s'applique aux consommations mensuelles, volumes mensuels et tendances par mois.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_012\", \"type\": \"time_rule\", \"title\": \"Analyse annuelle\", \"content\": \"Une analyse annuelle groupe les résultats par DIM_DATE.annee. Cette règle s'applique aux synthèses annuelles.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_013\", \"type\": \"dimension_rule\", \"title\": \"Analyse par cuve\", \"content\": \"Une analyse par cuve utilise la jointure entre Fact_Fuel et Dim_Cuve, puis un GROUP BY sur nom_cuve ou numero_cuve selon le besoin métier.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_014\", \"type\": \"dimension_rule\", \"title\": \"Analyse par fuel\", \"content\": \"Une analyse par fuel utilise la jointure entre Fact_Fuel et Dim_Type_Fuel, puis un GROUP BY sur nom_fuel ou type_fuel.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_015\", \"type\": \"ratio_rule\", \"title\": \"Calcul des parts relatives\", \"content\": \"Une part relative ou un pourcentage se calcule avec la formule valeur / total * 100. En SQL Server, il faut protéger la division par zéro avec NULLIF.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_016\", \"type\": \"ratio_rule\", \"title\": \"Calcul du taux d évolution\", \"content\": \"Le taux d'évolution se calcule avec la formule (valeur courante - valeur précédente) / valeur précédente * 100. En SQL, la valeur précédente peut être obtenue avec LAG.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_017\", \"type\": \"business_example\", \"title\": \"Exemples de cuves connues\", \"content\": \"Les cuves connues dans les données sont Cuve A avec le code C-001 et une capacité maximale de 60, Cuve B avec le code C-002 et une capacité maximale de 45, et Cuve C avec le code C-003 et une capacité maximale de 35.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_018\", \"type\": \"business_example\", \"title\": \"Exemples de fuels connus\", \"content\": \"Les fuels connus dans les données sont le fioul lourd HFO 380 et le fioul léger MGO DMA.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_019\", \"type\": \"capability\", \"title\": \"Questions supportées\", \"content\": \"Le schéma permet de répondre aux questions de total, moyenne, minimum, maximum, comparaison, évolution temporelle, part relative, top N et analyse par cuve, fuel ou période.\"}"
-  },
-  {
-    "source": "rag_documents.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"doc_020\", \"type\": \"limitation\", \"title\": \"Limites du schéma\", \"content\": \"Le schéma actuel ne permet pas d'expliquer la cause des variations, ni de faire de l'analyse horaire, ni de traiter des mouvements détaillés d'entrée et de sortie, ni de faire des prévisions fiables sans modèle complémentaire.\"}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_001\", \"intent\": \"consommation_totale\", \"question\": \"Quelle est la consommation totale ?\", \"variants\": [\"Donne-moi la consommation totale.\", \"Quelle quantité totale a été consommée ?\", \"Quelle est la somme de consommation ?\", \"Combien de tonnes ont été consommées au total ?\", \"Montre la consommation globale.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_002\", \"intent\": \"volume_total\", \"question\": \"Quel est le volume total ?\", \"variants\": [\"Donne-moi le volume total.\", \"Quelle est la somme des volumes ?\", \"Quel volume global a été enregistré ?\", \"Combien de tonnes de volume au total ?\", \"Montre le volume global.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_003\", \"intent\": \"consommation_moyenne\", \"question\": \"Quelle est la consommation moyenne ?\", \"variants\": [\"Donne-moi la consommation moyenne.\", \"Quelle est la moyenne de consommation ?\", \"Combien consomme-t-on en moyenne ?\", \"Montre la moyenne globale de consommation.\", \"Quelle est la valeur moyenne consommée ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_004\", \"intent\": \"consommation_min\", \"question\": \"Quel est le minimum de consommation ?\", \"variants\": [\"Quelle est la plus petite consommation ?\", \"Donne-moi la consommation minimale.\", \"Quel est le plus faible niveau de consommation ?\", \"Montre la valeur minimum de consommation.\", \"Quelle est la consommation la plus basse ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_005\", \"intent\": \"consommation_max\", \"question\": \"Quel est le maximum de consommation ?\", \"variants\": [\"Quelle est la plus grande consommation ?\", \"Donne-moi la consommation maximale.\", \"Quel est le plus haut niveau de consommation ?\", \"Montre la valeur maximum de consommation.\", \"Quelle est la consommation la plus élevée ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_006\", \"intent\": \"consommation_journaliere\", \"question\": \"Quelle est la consommation journalière ?\", \"variants\": [\"Donne-moi la consommation par jour.\", \"Montre la consommation quotidienne.\", \"Quelle est la consommation jour par jour ?\", \"Affiche l'évolution journalière de la consommation.\", \"Je veux la consommation quotidienne.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_007\", \"intent\": \"volume_journalier\", \"question\": \"Quel est le volume journalier ?\", \"variants\": [\"Donne-moi le volume par jour.\", \"Montre le volume quotidien.\", \"Quel est le volume jour par jour ?\", \"Affiche l'évolution journalière du volume.\", \"Je veux le volume quotidien.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_008\", \"intent\": \"consommation_mensuelle\", \"question\": \"Quelle est la consommation mensuelle ?\", \"variants\": [\"Donne-moi la consommation par mois.\", \"Montre la consommation mensuelle.\", \"Quelle est la consommation mois par mois ?\", \"Affiche l'évolution mensuelle de la consommation.\", \"Je veux la consommation par mois.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_009\", \"intent\": \"consommation_annuelle\", \"question\": \"Quelle est la consommation annuelle ?\", \"variants\": [\"Donne-moi la consommation par année.\", \"Montre la consommation annuelle.\", \"Quelle est la consommation année par année ?\", \"Affiche la synthèse annuelle de consommation.\", \"Je veux la consommation annuelle.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_010\", \"intent\": \"consommation_par_cuve\", \"question\": \"Quelle est la consommation par cuve ?\", \"variants\": [\"Donne-moi la consommation de chaque cuve.\", \"Compare les cuves selon la consommation.\", \"Montre la consommation par réservoir.\", \"Quelle cuve consomme combien ?\", \"Affiche la consommation de toutes les cuves.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_011\", \"intent\": \"consommation_par_fuel\", \"question\": \"Quelle est la consommation par type de fuel ?\", \"variants\": [\"Donne-moi la consommation par fuel.\", \"Compare les types de fuel.\", \"Montre la consommation de chaque carburant.\", \"Quel fuel consomme combien ?\", \"Affiche la consommation par type de carburant.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_012\", \"intent\": \"consommation_moyenne_par_cuve\", \"question\": \"Quelle est la consommation moyenne par cuve ?\", \"variants\": [\"Donne-moi la moyenne de consommation pour chaque cuve.\", \"Compare la consommation moyenne des cuves.\", \"Quelle cuve a la plus forte moyenne ?\", \"Montre la moyenne par cuve.\", \"Affiche la consommation moyenne de chaque réservoir.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_013\", \"intent\": \"consommation_moyenne_par_fuel\", \"question\": \"Quelle est la consommation moyenne par fuel ?\", \"variants\": [\"Donne-moi la moyenne de consommation pour chaque fuel.\", \"Compare la consommation moyenne des fuels.\", \"Quel fuel a la plus forte moyenne ?\", \"Montre la moyenne par type de carburant.\", \"Affiche la consommation moyenne de chaque fuel.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_014\", \"intent\": \"jour_max_consommation\", \"question\": \"Quel jour a la plus forte consommation ?\", \"variants\": [\"Quel est le jour de consommation maximale ?\", \"Donne-moi le jour où la consommation est la plus élevée.\", \"Quel jour a le pic de consommation ?\", \"Montre le jour le plus consommateur.\", \"Quel est le jour record en consommation ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_015\", \"intent\": \"jour_min_consommation\", \"question\": \"Quel jour a la plus faible consommation ?\", \"variants\": [\"Quel est le jour de consommation minimale ?\", \"Donne-moi le jour où la consommation est la plus basse.\", \"Quel jour a le plus faible niveau de consommation ?\", \"Montre le jour le moins consommateur.\", \"Quel est le jour le plus faible en consommation ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_016\", \"intent\": \"cuve_max_consommation\", \"question\": \"Quelle cuve consomme le plus ?\", \"variants\": [\"Quelle est la cuve la plus consommatrice ?\", \"Donne-moi la cuve qui consomme le plus.\", \"Quelle cuve a la plus grande consommation ?\", \"Montre la cuve la plus sollicitée.\", \"Quel réservoir consomme le plus ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_017\", \"intent\": \"fuel_max_consommation\", \"question\": \"Quel fuel est le plus consommé ?\", \"variants\": [\"Quel carburant est le plus consommé ?\", \"Donne-moi le fuel dominant.\", \"Quel type de fuel consomme le plus ?\", \"Montre le fuel le plus utilisé.\", \"Quel fuel a la consommation la plus élevée ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_018\", \"intent\": \"evolution_journaliere\", \"question\": \"Quelle est l'évolution journalière de la consommation ?\", \"variants\": [\"Montre l'évolution quotidienne de la consommation.\", \"Je veux la tendance journalière.\", \"Affiche la série temporelle quotidienne.\", \"Donne-moi l'évolution par jour.\", \"Montre comment la consommation évolue chaque jour.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_019\", \"intent\": \"variation_journaliere\", \"question\": \"Quelle est la variation jour par jour ?\", \"variants\": [\"Donne-moi la variation quotidienne.\", \"Montre l'écart entre chaque jour.\", \"Quelle est la différence d'un jour à l'autre ?\", \"Affiche la variation journalière.\", \"Je veux la variation absolue quotidienne.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_020\", \"intent\": \"taux_evolution_journalier\", \"question\": \"Quel est le taux d'évolution journalier ?\", \"variants\": [\"Donne-moi le pourcentage d'évolution par jour.\", \"Montre le taux de variation quotidien.\", \"Quelle est l'évolution en pourcentage jour par jour ?\", \"Affiche le taux de progression quotidien.\", \"Je veux le taux d'évolution de la consommation par jour.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_021\", \"intent\": \"part_cuve\", \"question\": \"Quelle est la part de chaque cuve dans la consommation totale ?\", \"variants\": [\"Donne-moi le pourcentage de chaque cuve.\", \"Quelle est la contribution de chaque cuve ?\", \"Montre la part relative de chaque cuve.\", \"Quel est le poids de chaque cuve dans le total ?\", \"Affiche le pourcentage de contribution par cuve.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_022\", \"intent\": \"part_fuel\", \"question\": \"Quelle est la part de chaque fuel dans la consommation totale ?\", \"variants\": [\"Donne-moi le pourcentage de chaque fuel.\", \"Quelle est la contribution de chaque fuel ?\", \"Montre la part relative de chaque carburant.\", \"Quel est le poids de chaque fuel dans le total ?\", \"Affiche le pourcentage de contribution par fuel.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_023\", \"intent\": \"taux_utilisation_cuve\", \"question\": \"Quel est le taux d'utilisation moyen de chaque cuve ?\", \"variants\": [\"Compare le volume moyen à la capacité maximale.\", \"Donne-moi le pourcentage d'utilisation des cuves.\", \"Quel est le taux moyen d'occupation de chaque cuve ?\", \"Montre le ratio volume sur capacité.\", \"Affiche l'utilisation moyenne des cuves par rapport à leur capacité.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_024\", \"intent\": \"top3_cuves\", \"question\": \"Quelles sont les 3 cuves les plus consommatrices ?\", \"variants\": [\"Donne-moi le top 3 des cuves.\", \"Quelles sont les trois cuves qui consomment le plus ?\", \"Montre les 3 réservoirs les plus consommateurs.\", \"Affiche le classement des 3 premières cuves.\", \"Je veux les 3 cuves avec la plus forte consommation.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_025\", \"intent\": \"top3_jours\", \"question\": \"Quels sont les 3 jours avec la plus forte consommation ?\", \"variants\": [\"Donne-moi les 3 jours les plus consommateurs.\", \"Quels sont les trois jours records ?\", \"Montre le top 3 des jours de consommation.\", \"Affiche les 3 jours avec le plus haut niveau de consommation.\", \"Je veux les 3 jours de plus forte consommation.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_026\", \"intent\": \"consommation_cuve_filtre\", \"question\": \"Quelle est la consommation de la cuve A ?\", \"variants\": [\"Donne-moi la consommation totale de Cuve A.\", \"Combien consomme la Cuve A ?\", \"Montre la consommation de la cuve A.\", \"Quelle quantité a consommé la Cuve A ?\", \"Je veux la consommation associée à Cuve A.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_027\", \"intent\": \"consommation_fuel_filtre\", \"question\": \"Quelle est la consommation du fuel lourd ?\", \"variants\": [\"Donne-moi la consommation de HFO 380.\", \"Combien consomme le fioul lourd ?\", \"Montre la consommation du fuel HFO 380.\", \"Quelle quantité est consommée pour le fioul lourd ?\", \"Je veux la consommation du carburant lourd.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_028\", \"intent\": \"consommation_periode\", \"question\": \"Quelle est la consommation totale en janvier 2025 ?\", \"variants\": [\"Donne-moi la consommation de janvier 2025.\", \"Combien a-t-on consommé en janvier 2025 ?\", \"Montre la consommation totale pour janvier 2025.\", \"Quelle est la somme consommée en janvier 2025 ?\", \"Je veux la consommation du mois 1 de l'année 2025.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_029\", \"intent\": \"consommation_mensuelle_par_cuve\", \"question\": \"Quelle est la consommation mensuelle par cuve ?\", \"variants\": [\"Donne-moi la consommation par mois et par cuve.\", \"Montre l'évolution mensuelle de chaque cuve.\", \"Compare les cuves mois par mois.\", \"Affiche la consommation mensuelle pour toutes les cuves.\", \"Je veux la consommation de chaque cuve par mois.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_030\", \"intent\": \"consommation_mensuelle_par_fuel\", \"question\": \"Quelle est la consommation mensuelle par fuel ?\", \"variants\": [\"Donne-moi la consommation par mois et par fuel.\", \"Montre l'évolution mensuelle de chaque fuel.\", \"Compare les fuels mois par mois.\", \"Affiche la consommation mensuelle pour tous les carburants.\", \"Je veux la consommation de chaque fuel par mois.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_031\", \"intent\": \"consommation_periode\", \"question\": \"Quelle est la consommation entre deux dates ?\", \"variants\": [\"Donne-moi la consommation entre le 1er janvier et le 31 janvier 2025.\", \"Combien a-t-on consommé entre deux dates ?\", \"Montre la consommation sur une période donnée.\", \"Je veux la consommation entre une date de début et une date de fin.\", \"Affiche la somme consommée sur un intervalle de dates.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_032\", \"intent\": \"consommation_par_cuve\", \"question\": \"Compare les cuves.\", \"variants\": [\"Fais une comparaison des cuves.\", \"Quelle cuve consomme plus que les autres ?\", \"Montre les écarts de consommation entre les cuves.\", \"Classe les cuves par consommation.\", \"Je veux comparer toutes les cuves.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_033\", \"intent\": \"consommation_par_fuel\", \"question\": \"Compare les fuels.\", \"variants\": [\"Fais une comparaison des carburants.\", \"Quel fuel domine sur la période ?\", \"Montre les écarts de consommation entre les fuels.\", \"Classe les fuels par consommation.\", \"Je veux comparer tous les fuels.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_034\", \"intent\": \"volume_total\", \"question\": \"Quel est le volume global ?\", \"variants\": [\"Donne-moi le volume global.\", \"Quelle est la quantité totale en volume ?\", \"Montre le total du volume.\", \"Je veux la somme globale des volumes.\", \"Affiche le volume total mesuré.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_035\", \"intent\": \"consommation_moyenne\", \"question\": \"Combien consomme-t-on en moyenne ?\", \"variants\": [\"Montre la moyenne de consommation.\", \"Donne-moi la valeur moyenne consommée.\", \"Je veux la consommation moyenne globale.\", \"Affiche la moyenne générale de consommation.\", \"Quelle est la moyenne totale de consommation ?\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_036\", \"intent\": \"part_fuel\", \"question\": \"Quel pourcentage représente le fuel lourd ?\", \"variants\": [\"Quelle est la part du HFO 380 dans le total ?\", \"Combien représente le fioul lourd en pourcentage ?\", \"Montre la contribution du fuel lourd.\", \"Affiche la part relative de HFO 380.\", \"Je veux le pourcentage du carburant lourd.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_037\", \"intent\": \"part_cuve\", \"question\": \"Quel pourcentage représente la cuve A ?\", \"variants\": [\"Quelle est la part de Cuve A dans le total ?\", \"Combien représente la cuve A en pourcentage ?\", \"Montre la contribution de la cuve A.\", \"Affiche la part relative de Cuve A.\", \"Je veux le pourcentage de la cuve A dans la consommation totale.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_038\", \"intent\": \"consommation_fuel_filtre\", \"question\": \"Quelle est la consommation du fuel léger ?\", \"variants\": [\"Donne-moi la consommation de MGO DMA.\", \"Combien consomme le fioul léger ?\", \"Montre la consommation du fuel MGO DMA.\", \"Quelle quantité est consommée pour le fioul léger ?\", \"Je veux la consommation du carburant léger.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_039\", \"intent\": \"consommation_cuve_filtre\", \"question\": \"Quelle est la consommation de la cuve B ?\", \"variants\": [\"Donne-moi la consommation totale de Cuve B.\", \"Combien consomme la Cuve B ?\", \"Montre la consommation de la cuve B.\", \"Quelle quantité a consommé la Cuve B ?\", \"Je veux la consommation associée à Cuve B.\"]}"
-  },
-  {
-    "source": "user_questions_variants.jsonl",
-    "type": "jsonl_record",
-    "text": "{\"id\": \"qv_040\", \"intent\": \"consommation_cuve_filtre\", \"question\": \"Quelle est la consommation de la cuve C ?\", \"variants\": [\"Donne-moi la consommation totale de Cuve C.\", \"Combien consomme la Cuve C ?\", \"Montre la consommation de la cuve C.\", \"Quelle quantité a consommé la Cuve C ?\", \"Je veux la consommation associée à Cuve C.\"]}"
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_039\", \"question\": \"Quelle est la consommation totale par année et par fuel ?\", \"intent\": \"consommation_par_annee_fuel\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.DIM_DATE\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"annee\", \"nom_fuel\"], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, t.nom_fuel, SUM(f.consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel GROUP BY d.annee, t.nom_fuel ORDER BY d.annee, t.nom_fuel;\", \"explanation\": \"Calcule la consommation totale pour chaque combinaison d'année et de type de fuel.\"}"
   }
 ]

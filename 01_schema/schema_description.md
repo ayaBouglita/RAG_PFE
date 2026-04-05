@@ -8,7 +8,7 @@ Colonnes :
 - id_cuve
 - id_type_fuel
 - consommation_en_tonne
-- volume_en_tonne
+- Volume_cuve_en_Tonne
 ## Table : dbo.DIM_DATE
 Rôle : dimension temps.
 

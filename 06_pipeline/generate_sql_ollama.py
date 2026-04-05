@@ -83,28 +83,24 @@ def generate_sql(question: str):
     context = build_context(results)
 
     user_prompt = f"""
-Contexte récupéré :
+Contexte récupéré (exemples similaires) :
 {context}
 
 Question utilisateur :
 {question}
 
 Tâche :
-Génère uniquement une requête SQL Server valide correspondant à la question.
+Génère UNIQUEMENT une requête SQL Server valide correspondant à la question.
+Suis EXACTEMENT le format et la syntaxe des exemples fournis ci-dessus.
 
-Contraintes obligatoires :
-- Utiliser uniquement SQL Server.
-- Ne jamais utiliser LIMIT.
-- Utiliser TOP pour limiter le nombre de lignes.
-- Ne jamais utiliser une syntaxe PostgreSQL, MySQL ou SQLite.
-- N'utiliser que les tables et colonnes autorisées.
-- Retourner une seule requête SQL.
-- Aucun commentaire.
-- Aucune explication.
-- Aucun texte avant ou après la requête.
-- Pas de markdown.
-- Pas de ```sql.
-- SQL uniquement.
+Contraintes OBLIGATOIRES :
+- SQL Server T-SQL UNIQUEMENT
+- Utiliser SELECT TOP N (JAMAIS LIMIT qui est PostgreSQL/MySQL)
+- Ne jamais inventer de colonnes
+- Retourner une seule requête SQL valide
+- Aucun commentaire, explication, ou texte
+- Aucun markdown, aucun ```sql
+- SQL uniquement
 """.strip()
     #Appel à Ollama
     payload = {
