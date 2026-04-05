@@ -25,7 +25,7 @@ Colonnes :
 - id_cuve
 - numero_cuve
 - nom_cuve
-- capacite_max
+- capacite_max__T
 - date_construction
 ## Grain de la table Fact_Fuel
 
