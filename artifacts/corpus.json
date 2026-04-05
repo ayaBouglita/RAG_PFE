@@ -168,5 +168,10 @@
     "source": "sql_examples.jsonl",
     "type": "sql_example",
     "text": "{\"id\": \"ex_042\", \"question\": \"Quel est le type de fuel utilisé dans chaque cuve ?\", \"intent\": \"fuel_par_cuve\", \"tables\": [\"dbo.Fact_Fuel\", \"dbo.Dim_Cuve\", \"dbo.Dim_Type_Fuel\"], \"dimensions\": [\"nom_cuve\", \"nom_fuel\"], \"metrics\": [], \"aggregation\": \"DISTINCT\", \"sql\": \"SELECT DISTINCT c.nom_cuve, t.nom_fuel FROM dbo.Dim_Cuve c JOIN dbo.Fact_Fuel f ON c.id_cuve = f.id_cuve JOIN dbo.Dim_Type_Fuel t ON f.id_type_fuel = t.id_type_fuel ORDER BY c.nom_cuve, t.nom_fuel;\", \"explanation\": \"Retourne la liste des types de fuel utilisés par chaque cuve (SANS SELECT TOP, pas de GROUP BY pour du DISTINCT pur).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_043\", \"question\": \"Quel est l'age de chaque cuve ?\", \"intent\": \"age_cuve\", \"tables\": [\"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"age\"], \"aggregation\": \"DATEDIFF\", \"sql\": \"SELECT c.nom_cuve, c.date_construction, DATEDIFF(year, c.date_construction, CAST(GETDATE() AS DATE)) AS age_en_annees FROM dbo.Dim_Cuve c ORDER BY c.nom_cuve;\", \"explanation\": \"Calcule l'age de chaque cuve en nombre d'années depuis la date de construction jusqu'à aujourd'hui en utilisant DATEDIFF (compatible SQL Server).\"}"
   }
 ]
