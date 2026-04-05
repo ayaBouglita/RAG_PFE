@@ -1,25 +1,23 @@
 import json
 from pathlib import Path
 from config import SCHEMA_DIR, SQL_DIR, RAG_DIR, TESTS_DIR, ARTIFACTS_DIR
-
+#lecture d’un fichier texte
 def read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
+#lecture d’un fichier JSONL
 def read_jsonl(path: Path):
     items = []
     with path.open("r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, start=1):
+        for line in f:
             line = line.strip()
             if line:
-                try:
-                    items.append(json.loads(line))
-                except json.JSONDecodeError as exc:
-                    raise ValueError(f"Invalid JSON in {path} at line {line_num}: {exc}") from exc
+                items.append(json.loads(line))
     return items
-
+#construction du corpus à partir des fichiers markdown et JSONL
 def build_corpus():
     docs = []
-
+#lecture des fichiers markdown et ajout au corpus
     md_files = [
         SCHEMA_DIR / "schema_description.md",
         SCHEMA_DIR / "relationships.md",
@@ -36,7 +34,7 @@ def build_corpus():
                 "type": "markdown",
                 "text": read_text_file(path)
             })
-
+#lecture des fichiers JSONL et ajout au corpus
     jsonl_files = [
         SQL_DIR / "sql_examples.jsonl",
         RAG_DIR / "rag_documents.jsonl",
@@ -51,9 +49,8 @@ def build_corpus():
                     "type": "jsonl_record",
                     "text": json.dumps(item, ensure_ascii=False)
                 })
-
+#sauvegarde du corpus au format JSON
     out_path = ARTIFACTS_DIR / "corpus.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(docs, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[OK] Corpus créé : {out_path}")
     print(f"[OK] Nombre de documents : {len(docs)}")

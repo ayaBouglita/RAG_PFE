@@ -3,14 +3,16 @@ import json
 from generate_sql_ollama import generate_sql
 from run_query import execute_select_query
 
-
+#Transforme un DataFrame pandas en liste de dictionnaires JSON-like.
 def dataframe_to_records(df):
     return df.to_dict(orient="records")
 
-
+#Fonction principale pour poser une question, générer le SQL correspondant,
 def ask(question: str):
     generation = generate_sql(question)
 
+#Si la requête n’est pas valide on ne l’exécute pas
+# sinon on retourne une erreur
     if not generation["valid"]:
         return {
             "question": question,
@@ -20,6 +22,7 @@ def ask(question: str):
             "rows": []
         }
 
+     #Exécute la requête sur SQL Server
     df = execute_select_query(generation["sql"])
 
     return {
