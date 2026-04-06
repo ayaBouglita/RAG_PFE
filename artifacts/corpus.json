@@ -2,7 +2,7 @@
   {
     "source": "schema_description.md",
     "type": "markdown",
-    "text": "# Schéma DW_Energie\n\n## Table : dbo.Fact_Fuel\nRôle : table de faits contenant les mesures de consommation et de volume de fuel.\n\nColonnes :\n- id_date\n- id_cuve\n- id_type_fuel\n- consommation_en_tonne\n- Volume_cuve_en_Tonne\n## Table : dbo.DIM_DATE\nRôle : dimension temps.\n\nColonnes :\n- id_date\n- date_complete\n- jour\n- mois\n- annee\n## Table : dbo.Dim_Cuve\nRôle : dimension des cuves.\n\nColonnes :\n- id_cuve\n- numero_cuve\n- nom_cuve\n- capacite_max__T\n- date_construction\n## Grain de la table Fact_Fuel\n\nUne ligne représente une mesure de consommation et de volume pour :\n- une date\n- une cuve\n- un type de fuel\n## Grain de la table Fact_Fuel\nUne ligne représente une mesure de consommation et de volume pour une date donnée, une cuve donnée et un type de fuel donné."
+    "text": "# Schéma DW_Energie\n\n## Table : dbo.Fact_Fuel\nRôle : table de faits contenant les mesures de consommation et de volume de fuel.\n\nColonnes :\n- id_date\n- id_cuve\n- id_type_fuel\n- consommation_en_tonne\n- Volume_cuve_en_Tonne\n## Table : dbo.DIM_DATE\nRôle : dimension temps.\n\nColonnes :\n- id_date\n- date_complete\n- jour\n- mois\n- annee\n## Table : dbo.Dim_Cuve\nRôle : dimension des cuves.\n\nColonnes :\n- id_cuve\n- numero_cuve\n- nom_cuve\n- capacite_max__T\n- date_construction\n## Grain de la table Fact_Fuel\n\nUne ligne représente une mesure de consommation et de volume pour :\n- une date\n- une cuve\n- un type de fuel\n## Grain de la table Fact_Fuel\nUne ligne représente une mesure de consommation et de volume pour une date donnée, une cuve donnée et un type de fuel donné.\n\n## Table : dbo.Fact_Electricite\nRôle : table de faits contenant les mesures de consommation électrique des équipements.\n\nColonnes :\n- id_date\n- id_equipement\n- id_etat\n- id_equipe\n- Consommation_kWh\n\n## Table : dbo.DIM_ETAT\nRôle : dimension des états des équipements.\n\nColonnes :\n- id_etat\n- etat\n\nValeurs :\n- 1 = marche\n- 2 = arrêt\n- 3 = panne\n\n## Table : dbo.Dim_equipement\nRôle : dimension des équipements.\n\nColonnes :\n- id_equipement\n- nom_equipement\n\nExemples : Administration, Armoire générale 1, Atelier lavage, Compresseur GA 110, Chiller laser\n\n## Table : dbo.Dim_Equipe\nRôle : dimension des équipes.\n\nColonnes :\n- id_equipe\n- nom_equipe\n\nExemples : Équipe Support, Équipe Énergie, Équipe Gravure, Équipe Production Brongo\n\n## Grain de la table Fact_Electricite\nUne ligne représente une mesure de consommation électrique pour :\n- une date\n- un équipement\n- un état (marche / arrêt / panne)\n- une équipe\n\n## Relations Fact_Electricite\n- Fact_Electricite.id_date = DIM_DATE.id_date\n- Fact_Electricite.id_equipement = Dim_equipement.id_equipement\n- Fact_Electricite.id_etat = DIM_ETAT.id_etat\n- Fact_Electricite.id_equipe = Dim_Equipe.id_equipe"
   },
   {
     "source": "sql_examples.jsonl",
@@ -173,5 +173,70 @@
     "source": "sql_examples.jsonl",
     "type": "sql_example",
     "text": "{\"id\": \"ex_043\", \"question\": \"Quel est l'age de chaque cuve ?\", \"intent\": \"age_cuve\", \"tables\": [\"dbo.Dim_Cuve\"], \"dimensions\": [\"nom_cuve\"], \"metrics\": [\"age\"], \"aggregation\": \"DATEDIFF\", \"sql\": \"SELECT c.nom_cuve, c.date_construction, DATEDIFF(year, c.date_construction, CAST(GETDATE() AS DATE)) AS age_en_annees FROM dbo.Dim_Cuve c ORDER BY c.nom_cuve;\", \"explanation\": \"Calcule l'age de chaque cuve en nombre d'années depuis la date de construction jusqu'à aujourd'hui en utilisant DATEDIFF (compatible SQL Server).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_050\", \"question\": \"Quelle est la consommation totale d'électricité ?\", \"intent\": \"consommation_electricite_totale\", \"tables\": [\"dbo.Fact_Electricite\"], \"dimensions\": [], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite;\", \"explanation\": \"Calcule la consommation électrique totale de tous les équipements.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_051\", \"question\": \"Quelle est la consommation d'électricité par équipement ?\", \"intent\": \"consommation_par_equipement\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.Dim_equipement\"], \"dimensions\": [\"nom_equipement\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT e.nom_equipement, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.Dim_equipement e ON f.id_equipement = e.id_equipement GROUP BY e.nom_equipement ORDER BY consommation_totale_kwh DESC;\", \"explanation\": \"Compare la consommation électrique totale entre les équipements.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_052\", \"question\": \"Quelle est la consommation d'électricité par équipe ?\", \"intent\": \"consommation_par_equipe\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.Dim_Equipe\"], \"dimensions\": [\"nom_equipe\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT eq.nom_equipe, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.Dim_Equipe eq ON f.id_equipe = eq.id_equipe GROUP BY eq.nom_equipe ORDER BY consommation_totale_kwh DESC;\", \"explanation\": \"Agrège la consommation électrique par équipe.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_053\", \"question\": \"Quelle est la consommation d'électricité mensuelle ?\", \"intent\": \"consommation_electricite_mensuelle\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.DIM_DATE\"], \"dimensions\": [\"annee\", \"mois\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, d.mois, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.annee, d.mois ORDER BY d.annee, d.mois;\", \"explanation\": \"Calcule la consommation électrique totale par mois.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_054\", \"question\": \"Quelle est la consommation d'électricité annuelle ?\", \"intent\": \"consommation_electricite_annuelle\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.DIM_DATE\"], \"dimensions\": [\"annee\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.annee, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.annee ORDER BY d.annee;\", \"explanation\": \"Calcule la consommation électrique totale par année.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_055\", \"question\": \"Quelle est la consommation moyenne d'électricité par équipement ?\", \"intent\": \"consommation_moyenne_electricite_equipement\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.Dim_equipement\"], \"dimensions\": [\"nom_equipement\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"AVG\", \"sql\": \"SELECT e.nom_equipement, AVG(f.Consommation_kWh) AS consommation_moyenne_kwh FROM dbo.Fact_Electricite f JOIN dbo.Dim_equipement e ON f.id_equipement = e.id_equipement GROUP BY e.nom_equipement ORDER BY consommation_moyenne_kwh DESC;\", \"explanation\": \"Calcule la consommation électrique moyenne pour chaque équipement.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_056\", \"question\": \"Quel équipement consomme le plus d'électricité ?\", \"intent\": \"equipement_max_consommation\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.Dim_equipement\"], \"dimensions\": [\"nom_equipement\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM+TOP\", \"sql\": \"SELECT TOP 1 e.nom_equipement, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.Dim_equipement e ON f.id_equipement = e.id_equipement GROUP BY e.nom_equipement ORDER BY consommation_totale_kwh DESC;\", \"explanation\": \"Retourne l'équipement qui consomme le plus d'électricité.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_059\", \"question\": \"Quelle est la consommation des équipements en panne ?\", \"intent\": \"consommation_equipement_panne\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.DIM_ETAT\"], \"dimensions\": [\"etat\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM+FILTER\", \"sql\": \"SELECT et.etat, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.DIM_ETAT et ON f.id_etat = et.id_etat WHERE et.id_etat = 3 GROUP BY et.etat;\", \"explanation\": \"Calcule la consommation électrique des équipements en panne (id_etat = 3).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_060\", \"question\": \"Quelle est la distribution des états des équipements ?\", \"intent\": \"distribution_etat_equipement\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.DIM_ETAT\"], \"dimensions\": [\"etat\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT et.etat, COUNT(*) AS nombre_enregistrements, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.DIM_ETAT et ON f.id_etat = et.id_etat GROUP BY et.etat ORDER BY consommation_totale_kwh DESC;\", \"explanation\": \"Retourne la distribution de la consommation par état d'équipement (marche, arrêt, panne).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_061\", \"question\": \"C'est quoi les équipements qui existent ?\", \"intent\": \"list_all_equipements\", \"tables\": [\"dbo.Dim_equipement\"], \"dimensions\": [\"nom_equipement\"], \"metrics\": [], \"aggregation\": \"DISTINCT\", \"sql\": \"SELECT DISTINCT e.nom_equipement FROM dbo.Dim_equipement e ORDER BY e.nom_equipement;\", \"explanation\": \"Liste tous les équipements disponibles (SANS SELECT TOP).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_062\", \"question\": \"Quelles sont les équipes ?\", \"intent\": \"list_all_equipes\", \"tables\": [\"dbo.Dim_Equipe\"], \"dimensions\": [\"nom_equipe\"], \"metrics\": [], \"aggregation\": \"DISTINCT\", \"sql\": \"SELECT DISTINCT eq.nom_equipe FROM dbo.Dim_Equipe eq ORDER BY eq.nom_equipe;\", \"explanation\": \"Liste toutes les équipes disponibles (SANS SELECT TOP).\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_063\", \"question\": \"Quelle est la part de chaque équipement dans la consommation totale d'électricité ?\", \"intent\": \"part_equipement_electricite\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.Dim_equipement\"], \"dimensions\": [\"nom_equipement\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM+RATIO\", \"sql\": \"WITH total_global AS (SELECT SUM(Consommation_kWh) AS total_kwh FROM dbo.Fact_Electricite) SELECT e.nom_equipement, SUM(f.Consommation_kWh) AS consommation_totale_kwh, (SUM(f.Consommation_kWh) / NULLIF(tg.total_kwh, 0)) * 100.0 AS part_pct FROM dbo.Fact_Electricite f JOIN dbo.Dim_equipement e ON f.id_equipement = e.id_equipement CROSS JOIN total_global tg GROUP BY e.nom_equipement, tg.total_kwh ORDER BY part_pct DESC;\", \"explanation\": \"Calcule la contribution de chaque équipement à la consommation électrique totale.\"}"
+  },
+  {
+    "source": "sql_examples.jsonl",
+    "type": "sql_example",
+    "text": "{\"id\": \"ex_064\", \"question\": \"Quelle est l'évolution journalière de la consommation d'électricité ?\", \"intent\": \"evolution_journaliere_electricite\", \"tables\": [\"dbo.Fact_Electricite\", \"dbo.DIM_DATE\"], \"dimensions\": [\"date_complete\"], \"metrics\": [\"Consommation_kWh\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT d.date_complete, SUM(f.Consommation_kWh) AS consommation_totale_kwh FROM dbo.Fact_Electricite f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date GROUP BY d.date_complete ORDER BY d.date_complete;\", \"explanation\": \"Retourne la série temporelle journalière de consommation électrique.\"}"
   }
 ]
