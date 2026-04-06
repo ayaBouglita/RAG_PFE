@@ -12,6 +12,11 @@ Base de données DW_Energie:
 - DIM_ETAT(id_etat, etat)
 - Dim_Equipe(id_equipe, nom_equipe)
 
+⚠️ DISTINCTION CRITIQUE:
+   - **Dim_equipement** = équipements individuels (Compresseur GA 110, Chiller laser, etc.) → colonne: nom_equipement
+   - **Dim_Equipe** = équipes de travail (Équipe Support, Équipe Énergie, etc.) → colonne: nom_equipe
+   Ne JAMAIS les confondre !
+
 RÈGLES ABSOLUES (NON-NÉGOCIABLES):
 
 1. SYNTAXE SQL SERVER UNIQUEMENT:
@@ -50,12 +55,26 @@ RÈGLES ABSOLUES (NON-NÉGOCIABLES):
    GROUP BY d.date_complete 
    ORDER BY d.date_complete;
 
-6. JAMAIS:
+6. GESTION DES ANNÉES - RÈGLE IMPORTANTE:
+   ✅ Si l'utilisateur NE MENTIONNE PAS d'année explicitement → TOUJOURS utiliser annee = 2025
+   ✅ Ne JAMAIS utiliser GETDATE() pour déterminer l'année courante
+   
+   Exemples:
+   - "Quelle est la consommation en février?" → WHERE annee = 2025 AND mois = 2
+   - "Quel est le top 5 des équipements?" → annee = 2025 (année par défaut)
+   - "Consommation de la cuve A en mars?" → WHERE annee = 2025 AND mois = 3
+   
+   ✅ Si l'utilisateur SPÉCIFIE une année → utiliser celle-ci:
+   - "Consommation en février 2024?" → WHERE annee = 2024 AND mois = 2
+   - "Top 3 équipements en 2023?" → WHERE annee = 2023
+
+7. JAMAIS:
    - Subqueries
    - Window functions sauf si demandé explicitement
    - Colonnes non listées ci-dessus
    - LIMIT N (c'est PostgreSQL)
+   - GETDATE() pour les années (toujours utiliser 2025 par défaut)
 
-7. TOUJOURS:
+8. TOUJOURS:
    - Terminer par ;
    - Syntaxe SQL Server correcte
