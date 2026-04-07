@@ -83,17 +83,24 @@ def generate_sql(question: str):
     context = build_context(results)
 
     user_prompt = f"""
-Contexte récupéré (exemples similaires) :
+Contexte récupéré (exemples similaires, définitions, documents) :
 {context}
 
 Question utilisateur :
 {question}
 
-Tâche :
-Génère UNIQUEMENT une requête SQL Server valide correspondant à la question.
-Suis EXACTEMENT le format et la syntaxe des exemples fournis ci-dessus.
+📌 INSTRUCTIONS PRIORITAIRES :
 
-Contraintes OBLIGATOIRES :
+1️⃣ Si la question est une DÉFINITION, CONCEPT, ou EXPLICATION (ex: "Qu'est-ce qu'un KPI?", "Définis X"):
+   → RÉPONDS DIRECTEMENT en utilisant le contexte fourni
+   → Ne génère PAS de SQL
+   → Utilise la section "Contexte récupéré" pour répondre
+   
+2️⃣ Si la question est une REQUÊTE DE BASE DE DONNÉES (comptages, listes, analyses):
+   → Génère une requête SQL Server valide
+   → Suis EXACTEMENT le format des exemples fournis
+   
+Contraintes OBLIGATOIRES (si tu génères du SQL):
 - SQL Server T-SQL UNIQUEMENT
 - Utiliser SELECT TOP N (JAMAIS LIMIT qui est PostgreSQL/MySQL)
 - Ne jamais inventer de colonnes
@@ -119,12 +126,26 @@ Contraintes OBLIGATOIRES :
     response.raise_for_status() #Vérification HTTP
 
     #raw_content = texte brut du modèle
-    #content = SQL nettoyé
+    #content = SQL nettoyé (ou réponse textuelle si définition)
     data = response.json() 
     raw_content = data.get("response", "").strip() 
-    content = extract_sql_only(raw_content) 
-
-    is_valid, message = validate_sql(content)
+    
+    # Détecte si c'est une réponse textuelle (définition) ou SQL
+    is_sql_response = (
+        raw_content.upper().strip().startswith("SELECT") or 
+        raw_content.upper().strip().startswith("WITH") or
+        "SELECT" in raw_content.upper() or
+        "FROM" in raw_content.upper()
+    )
+    
+    if is_sql_response:
+        content = extract_sql_only(raw_content)
+        is_valid, message = validate_sql(content)
+    else:
+        # C'est une réponse textuelle (définition)
+        content = raw_content
+        is_valid = True
+        message = "Réponse textuelle (pas de SQL nécessaire)"
 
     return {
         "question": question,
@@ -132,7 +153,8 @@ Contraintes OBLIGATOIRES :
         "raw_response": raw_content,
         "valid": is_valid,
         "validation_message": message,
-        "retrieved_docs": results
+        "retrieved_docs": results,
+        "is_text_response": not is_sql_response
     }
 
 #Exemple d'utilisation

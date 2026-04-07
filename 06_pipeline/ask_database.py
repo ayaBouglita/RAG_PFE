@@ -76,27 +76,38 @@ Sois concis. Réponse naturelle uniquement."""
     except Exception as e:
         return f"Désolé, je n'ai pas pu répondre à votre question: {error_message}"
 
-#Fonction principale pour poser une question, générer le SQL correspondant,
+#Fonction principale pour poser une question
 def ask(question: str):
     generation = generate_sql(question)
+    
+    # Si c'est une réponse textuelle (définition, concept, etc.)
+    if generation.get("is_text_response", False):
+        return {
+            "question": question,
+            "type": "text_response",
+            "answer": generation["sql"],
+            "valid": True,
+            "retrieved_docs": generation.get("retrieved_docs", [])
+        }
 
-#Si la requête n’est pas valide on ne l’exécute pas
-# sinon on retourne une erreur
+    # Si la requête n'est pas valide on ne l'exécute pas
     if not generation["valid"]:
         return {
             "question": question,
+            "type": "sql_query",
             "sql": generation["sql"],
             "valid": False,
             "error": generation["validation_message"],
             "rows": []
         }
 
-     #Exécute la requête sur SQL Server
+    # Exécute la requête sur SQL Server
     try:
         df = execute_select_query(generation["sql"])
     except Exception as e:
         return {
             "question": question,
+            "type": "sql_query",
             "sql": generation["sql"],
             "valid": False,
             "error": f"Erreur d'exécution: {str(e)}",
@@ -105,6 +116,7 @@ def ask(question: str):
 
     return {
         "question": question,
+        "type": "sql_query",
         "sql": generation["sql"],
         "valid": True,
         "rows_count": len(df),
@@ -117,24 +129,28 @@ if __name__ == "__main__":
     question = input("Question utilisateur : ").strip()
     result = ask(question)
 
-    print("\n=== SQL généré ===\n")
-    print(result["sql"])
-
-    print("\n=== Résultat ===\n")
-    if result["valid"]:
-        print("Colonnes :", result["columns"])
-        print("Nombre de lignes :", result["rows_count"])
-        
-        print("\n=== Réponse humanisée ===\n")
-        humanized = humanize_results(
-            question, 
-            result["sql"], 
-            result["rows"],
-            result["columns"]
-        )
-        print(humanized)
+    if result["type"] == "text_response":
+        print("\n=== Réponse ===\n")
+        print(result["answer"])
     else:
-        print("Erreur :", result["error"])
-        print("\n=== Explication humanisée ===\n")
-        explanation = humanize_error(question, result["error"])
-        print(explanation)
+        print("\n=== SQL généré ===\n")
+        print(result["sql"])
+
+        print("\n=== Résultat ===\n")
+        if result["valid"]:
+            print("Colonnes :", result["columns"])
+            print("Nombre de lignes :", result["rows_count"])
+            
+            print("\n=== Réponse humanisée ===\n")
+            humanized = humanize_results(
+                result["question"], 
+                result["sql"], 
+                result["rows"],
+                result["columns"]
+            )
+            print(humanized)
+        else:
+            print("Erreur :", result["error"])
+            print("\n=== Explication humanisée ===\n")
+            explanation = humanize_error(result["question"], result["error"])
+            print(explanation)

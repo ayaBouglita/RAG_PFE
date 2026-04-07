@@ -7,7 +7,7 @@
   {
     "source": "sql_examples.jsonl",
     "type": "sql_example",
-    "text": "{\"id\": \"ex_001\", \"question\": \"Quelle est la consommation totale ?\", \"intent\": \"consommation_totale\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule la somme totale de la consommation sur toutes les lignes de Fact_Fuel.\"}"
+    "text": "{\"id\": \"ex_001\", \"question\": \"Quelle est la consommation totale de fuel?\", \"intent\": \"consommation_totale\", \"tables\": [\"dbo.Fact_Fuel\"], \"dimensions\": [], \"metrics\": [\"consommation_en_tonne\"], \"aggregation\": \"SUM\", \"sql\": \"SELECT SUM(consommation_en_tonne) AS consommation_totale_tonne FROM dbo.Fact_Fuel;\", \"explanation\": \"Calcule la somme totale de la consommation sur toutes les lignes de Fact_Fuel.\"}"
   },
   {
     "source": "sql_examples.jsonl",
@@ -252,6 +252,6 @@
   {
     "source": "sql_examples.jsonl",
     "type": "sql_example",
-    "text": "{\"id\": \"ex_nombre_equipes\", \"question\": \"Quel est le nombre total d'équipes ?\", \"intent\": \"nombre_equipes\", \"tables\": [\"dbo.Dim_equipe\"], \"dimensions\": [], \"metrics\": [\"id_equipe\"], \"aggregation\": \"COUNT\", \"sql\": \"SELECT COUNT(*) AS nombre_equipes FROM dbo.Dim_equipe;\", \"explanation\": \"Compte le nombre total d'équipes présentes dans la dimension équipe.\"}"
+    "text": "{\"id\": \"ex_080\", \"question\": \"Quel est le nombre total d'équipes ?\", \"intent\": \"nombre_equipes\", \"tables\": [\"dbo.Dim_equipe\"], \"dimensions\": [], \"metrics\": [\"id_equipe\"], \"aggregation\": \"COUNT\", \"sql\": \"SELECT COUNT(*) AS nombre_equipes FROM dbo.Dim_equipe;\", \"explanation\": \"Compte le nombre total d'équipes présentes dans la dimension équipe.\"}"
   }
 ]
