@@ -60,7 +60,7 @@ class MessageRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     create_tables()
-    print("✅ API démarrée - Tables OK")
+    print(" API démarrée - Tables OK")
 
 
 # ======== HELPER ========
@@ -246,7 +246,7 @@ def chat_message(
         
     except Exception as e:
         import traceback
-        print(f"❌ Error in chat_message: {str(e)}")
+        print(f" Error in chat_message: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Erreur pipeline: {str(e)}")
 
