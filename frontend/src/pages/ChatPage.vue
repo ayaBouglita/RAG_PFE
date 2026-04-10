@@ -106,40 +106,34 @@ onMounted(async () => {
 const sendMessage = async () => {
   if (!newMessage.value.trim() || !currentConversation.value || loading.value) return
 
-  const userMessage = {
-    id: Date.now().toString(),
-    role: 'user',
-    content: newMessage.value,
-    timestamp: new Date()
-  }
-
-  chatStore.addMessage(userMessage)
   const messageText = newMessage.value
   newMessage.value = ''
+
+  // Ajouter immédiatement le message utilisateur (avant l'appel API)
+  chatStore.addMessage(messageText, null, null, null)
 
   chatStore.setLoading(true)
 
   try {
     const response = await chatService.sendMessage(currentConversation.value.id, messageText)
     
-    const assistantMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: response.data.assistant_response,
-      sql_query: response.data.sql_query,
-      timestamp: new Date()
-    }
-
-    chatStore.addMessage(assistantMessage)
+    // Ajouter la réponse de l'assistant
+    chatStore.addMessage(
+      null, // pas de message utilisateur (déjà ajouté)
+      response.data.assistant_response,
+      response.data.sql_query,
+      response.data.chart_config || null
+    )
   } catch (err) {
     console.error('Erreur lors de l\'envoi du message:', err)
-    const errorMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: '❌ Erreur: ' + (err.response?.data?.detail || 'Une erreur est survenue'),
-      timestamp: new Date()
-    }
-    chatStore.addMessage(errorMessage)
+    const errorText = err.response?.data?.detail || 'Une erreur est survenue'
+    // Remplacer le dernier message par l'erreur
+    chatStore.addMessage(
+      null,
+      '❌ Erreur: ' + errorText,
+      null,
+      null
+    )
   } finally {
     chatStore.setLoading(false)
   }

@@ -43,6 +43,10 @@ export const chatService = {
       conversation_id: conversationId,
       message: message
     })
+  },
+  
+  getConversationMessages(conversationId) {
+    return apiClient.get(`/chat/conversations/${conversationId}/messages`)
   }
 }
 

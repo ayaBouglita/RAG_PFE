@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Optional
 from uuid import uuid4
 from datetime import datetime
 import os
@@ -20,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '06_pipeline'))
 from ask_database import humanize_results
 from generate_sql_ollama import generate_sql
 from run_query import execute_select_query
+from pipeline_with_charts import RAGPipelineWithCharts
 
 app = FastAPI(title="RAG Intelligence API", version="1.0.0")
 
@@ -55,6 +57,22 @@ class ConversationCreate(BaseModel):
 class MessageRequest(BaseModel):
     conversation_id: str
     message: str
+
+
+class ChartConfig(BaseModel):
+    type: str  # "line", "bar", "pie", "combo", "none"
+    title: str = ""
+    unit: str = ""
+    data: dict = {}
+    options: dict = {}
+    statistics: dict = {}
+
+
+class MessageResponse(BaseModel):
+    user_message: str
+    assistant_response: str
+    sql_query: str
+    chart_config: Optional[ChartConfig] = None
 
 
 # ======== STARTUP ========
@@ -183,13 +201,13 @@ def list_conversations(user: User = Depends(get_token_user), db = Depends(get_db
     }
 
 
-@app.post("/api/v1/chat/message", dependencies=[Depends(security)])
+@app.post("/api/v1/chat/message", response_model=MessageResponse, dependencies=[Depends(security)])
 def chat_message(
     data: MessageRequest,
     user: User = Depends(get_token_user),
     db = Depends(get_db)
 ):
-    """Envoyer un message et obtenir la réponse"""
+    """Envoyer un message et obtenir la réponse (+ graphique optionnel)"""
     
     # Vérifier que la conversation appartient à l'utilisateur
     conv = db.query(Conversation).filter(
@@ -200,27 +218,15 @@ def chat_message(
         raise HTTPException(status_code=404, detail="Conversation not found")
     
     try:
-        # Appeler RAG pipeline
-        sql_result = generate_sql(data.message)
-        sql_query = sql_result["sql"]
+        # Utiliser le nouveau pipeline RAG + Charts
+        pipeline = RAGPipelineWithCharts()
+        pipeline_result = pipeline.process_question(data.message)
         
-        # Si c'est une réponse textuelle (pas SQL)
-        if sql_result["is_text_response"]:
-            response = sql_query
-        else:
-            # Exécuter la requête SQL (retourne un DataFrame)
-            df_results = execute_select_query(sql_query)
-            
-            # Humaniser les résultats
-            if not df_results.empty:
-                # Convertir DataFrame en list of dicts - remplace NaN par None pour JSON serialization
-                results_list = df_results.where(pd.notna(df_results), None).to_dict('records')
-                columns = list(df_results.columns)
-                response = humanize_results(data.message, sql_query, results_list, columns)
-            else:
-                response = "Aucun résultat trouvé"
+        response = pipeline_result["response"]
+        sql_query = pipeline_result["sql_query"]
+        chart_config = pipeline_result.get("chart_config")
         
-        # Sauvegarder
+        # Sauvegarder les messages
         msg_user = Message(
             id=str(uuid4()),
             conversation_id=conv.id,
@@ -239,10 +245,12 @@ def chat_message(
         db.add(msg_assistant)
         db.commit()
         
+        # Retourner la réponse avec optionnellement un graphique
         return {
             "user_message": data.message,
             "assistant_response": response,
-            "sql_query": sql_query
+            "sql_query": sql_query,
+            "chart_config": chart_config
         }
         
     except Exception as e:

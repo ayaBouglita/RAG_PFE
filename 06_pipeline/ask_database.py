@@ -47,9 +47,16 @@ Humanise cette réponse maintenant."""
         )
         response.raise_for_status()
         data = response.json()
-        return data.get("response", "").strip()
+        humanized = data.get("response", "").strip()
+        
+        # Si la réponse est vide, retourner un fallback
+        if not humanized:
+            return f"Voici les résultats trouvés: {len(results)} résultat(s) pertinent(s) à votre question."
+        
+        return humanized
     except Exception as e:
-        return f"Erreur lors de la humanisation: {str(e)}"
+        print(f"❌ Erreur humanisation: {str(e)}")
+        return f"Je n'ai pas pu générer une explication détaillée, mais voici les résultats: {len(results)} résultat(s) trouvé(s)."
 
 #Humanise les erreurs SQL en texte naturel avec Mistral
 def humanize_error(question: str, error_message: str) -> str:

@@ -24,8 +24,28 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = msgs
   }
 
-  const addMessage = (message) => {
-    messages.value.push(message)
+  const addMessage = (userMessage, assistantResponse, sqlQuery, chartConfig) => {
+    // Ajouter le message utilisateur si fourni
+    if (userMessage && userMessage.trim()) {
+      const userMsg = {
+        id: Date.now() + Math.random(),
+        role: "user",
+        content: userMessage.trim()
+      }
+      messages.value.push(userMsg)
+    }
+    
+    // Ajouter la réponse assistant si fournie (et non vide)
+    if (assistantResponse && assistantResponse.trim()) {
+      const assistantMsg = {
+        id: Date.now() + Math.random() + 1,
+        role: "assistant",
+        content: assistantResponse.trim(),
+        sql_query: sqlQuery || null,
+        chart_config: chartConfig || null
+      }
+      messages.value.push(assistantMsg)
+    }
   }
 
   const setLoading = (value) => {
