@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import apiClient from '../services/api'
 
 export const useChatStore = defineStore('chat', () => {
   const conversations = ref([])
@@ -17,7 +18,10 @@ export const useChatStore = defineStore('chat', () => {
 
   const selectConversation = (conv) => {
     currentConversation.value = conv
-    messages.value = []
+  }
+
+  const setMessages = (msgs) => {
+    messages.value = msgs
   }
 
   const addMessage = (message) => {
@@ -28,6 +32,21 @@ export const useChatStore = defineStore('chat', () => {
     loading.value = value
   }
 
+  const loadConversationMessages = async (conversationId) => {
+    try {
+      setLoading(true)
+      const response = await apiClient.get(
+        `/chat/conversations/${conversationId}/messages`
+      )
+      setMessages(response.data.messages || [])
+    } catch (error) {
+      console.error('Erreur lors du chargement des messages:', error)
+      setMessages([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return {
     conversations,
     currentConversation,
@@ -36,7 +55,9 @@ export const useChatStore = defineStore('chat', () => {
     setConversations,
     addConversation,
     selectConversation,
+    setMessages,
     addMessage,
-    setLoading
+    setLoading,
+    loadConversationMessages
   }
 })

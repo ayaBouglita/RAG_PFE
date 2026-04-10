@@ -103,8 +103,10 @@ const createConversation = async () => {
   }
 }
 
-const selectConversation = (conv) => {
+const selectConversation = async (conv) => {
   chatStore.selectConversation(conv)
+  // Charger les messages historiques de cette conversation
+  await chatStore.loadConversationMessages(conv.id)
 }
 
 const logout = () => {

@@ -59,10 +59,71 @@ class ConversationCreate(BaseModel):
     title: str
 
 
-class ConversationResponse(BaseModel):
+class MessageListItem(BaseModel):
     id: str
-    title: str
+    role: str
+    content: str
+    sql_query: str = None
     created_at: datetime
+
+
+class MessageListResponse(BaseModel):
+    conversation_id: str
+    messages: list[MessageListItem]
+
+
+@router.get("/conversations")
+def list_conversations(token: str = None, db: Session = Depends(get_db)):
+    """Lister les conversations de l'utilisateur"""
+    
+    user = get_current_user(token, db)
+    
+    conversations = db.query(Conversation).filter(
+        Conversation.user_id == user.id
+    ).all()
+    
+    return {"conversations": conversations}
+
+
+@router.get("/chat/conversations/{conversation_id}/messages", response_model=MessageListResponse)
+def get_conversation_messages(
+    conversation_id: str,
+    token: str = None,
+    db: Session = Depends(get_db)
+):
+    """Récupérer tous les messages d'une conversation"""
+    
+    user = get_current_user(token, db)
+    
+    # Vérifier que la conversation appartient à l'utilisateur
+    conversation = db.query(Conversation).filter(
+        (Conversation.id == conversation_id) &
+        (Conversation.user_id == user.id)
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    # Récupérer tous les messages ordonnés par date
+    messages = db.query(Message).filter(
+        Message.conversation_id == conversation_id
+    ).order_by(Message.created_at.asc()).all()
+    
+    message_list = [
+        MessageListItem(
+            id=msg.id,
+            role=msg.role,
+            content=msg.content,
+            sql_query=msg.sql_query,
+            created_at=msg.created_at
+        )
+        for msg in messages
+    ]
+    
+    return MessageListResponse(
+        conversation_id=conversation_id,
+        messages=message_list
+    )
 
 
 # ======== HELPER FUNCTIONS ========
@@ -95,78 +156,6 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     
     if existing:
         raise HTTPException(status_code=400, detail="Username ou email déjà utilisé")
-    
-    # Créer l'utilisateur
-    new_user = User(
-        username=user_data.username,
-        email=user_data.email,
-        password_hash=hash_password(user_data.password)
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    return new_user
-
-
-@router.post("/login", response_model=LoginResponse)
-def login(creds: LoginRequest, db: Session = Depends(get_db)):
-    """Se connecter et obtenir un token JWT"""
-    
-    user = db.query(User).filter(User.username == creds.username).first()
-    
-    if not user or not verify_password(creds.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Identifiants invalides")
-    
-    token = create_access_token({"user_id": user.id})
-    
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user": user
-    }
-
-
-# ======== CHAT ENDPOINTS ========
-@router.post("/conversations", response_model=ConversationResponse)
-def create_conversation(
-    data: ConversationCreate,
-    token: str = None,
-    db: Session = Depends(get_db)
-):
-    """Créer une nouvelle conversation"""
-    
-    # Récupérer utilisateur du token
-    if not token:
-        raise HTTPException(status_code=401, detail="No token")
-    
-    user = get_current_user(token, db)
-    
-    # Créer la conversation
-    conv_id = str(uuid4())
-    conversation = Conversation(
-        id=conv_id,
-        user_id=user.id,
-        title=data.title
-    )
-    db.add(conversation)
-    db.commit()
-    db.refresh(conversation)
-    
-    return conversation
-
-
-@router.get("/conversations")
-def list_conversations(token: str = None, db: Session = Depends(get_db)):
-    """Lister les conversations de l'utilisateur"""
-    
-    user = get_current_user(token, db)
-    
-    conversations = db.query(Conversation).filter(
-        Conversation.user_id == user.id
-    ).all()
-    
-    return {"conversations": conversations}
 
 
 @router.post("/chat/message", response_model=MessageResponse)

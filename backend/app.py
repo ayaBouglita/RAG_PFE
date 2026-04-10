@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Header, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from uuid import uuid4
 from datetime import datetime
@@ -249,6 +250,52 @@ def chat_message(
         print(f" Error in chat_message: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Erreur pipeline: {str(e)}")
+
+
+@app.get("/api/v1/chat/conversations/{conversation_id}/messages", dependencies=[Depends(security)])
+def get_conversation_messages(conversation_id: str, authorization: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Récupérer tous les messages d'une conversation"""
+    
+    # Extraire le token
+    token = authorization.credentials
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user_id = payload.get("user_id")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Vérifier que la conversation appartient à l'utilisateur
+    conversation = db.query(Conversation).filter(
+        (Conversation.id == conversation_id) &
+        (Conversation.user_id == user.id)
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    # Récupérer tous les messages ordonnés par date
+    messages = db.query(Message).filter(
+        Message.conversation_id == conversation_id
+    ).order_by(Message.created_at.asc()).all()
+    
+    message_list = [
+        {
+            "id": msg.id,
+            "role": msg.role,
+            "content": msg.content,
+            "sql_query": msg.sql_query,
+            "created_at": msg.created_at
+        }
+        for msg in messages
+    ]
+    
+    return {
+        "conversation_id": conversation_id,
+        "messages": message_list
+    }
 
 
 @app.get("/health")
