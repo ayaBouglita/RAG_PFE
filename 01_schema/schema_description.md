@@ -4,20 +4,28 @@
 Rôle : table de faits contenant les mesures de consommation et de volume de fuel.
 
 Colonnes :
-- id_date
-- id_cuve
+- id_date (clé étrangère vers DIM_DATE)
+- id_cuve (clé étrangère vers Dim_Cuve)
 - id_type_fuel
-- consommation_en_tonne
+- Consommation_en_Tonne
 - Volume_cuve_en_Tonne
+
+**IMPORTANTE**: Pour filtrer par jour, mois, ou année, vous DEVEZ joindre la table DIM_DATE:
+```sql
+SELECT ... FROM dbo.Fact_Fuel f
+JOIN dbo.DIM_DATE d ON f.id_date = d.id_date
+WHERE d.annee = 2025 AND d.mois = 2 AND d.jour IN (5, 6)
+```
+
 ## Table : dbo.DIM_DATE
-Rôle : dimension temps.
+Rôle : dimension temps. **Cette table contient jour, mois, annee - utilisez-la pour tous les filtres de date!**
 
 Colonnes :
-- id_date
-- date_complete
-- jour
-- mois
-- annee
+- id_date (clé primaire)
+- date_complete (format YYYY-MM-DD)
+- jour (1-31)
+- mois (1-12)
+- annee (année)
 ## Table : dbo.Dim_Cuve
 Rôle : dimension des cuves.
 

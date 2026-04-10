@@ -73,7 +73,7 @@ def extract_sql_only(text: str) -> str:
 
 #Fonction principale pour générer la requête SQL 
 # à partir de la question utilisateur
-def generate_sql(question: str):
+def generate_sql(question: str, memory_context: str = ""):
     retriever = Retriever()
     results = retriever.search(question, top_k=5) #On récupère les 5 documents les plus proches.
 
@@ -82,33 +82,14 @@ def generate_sql(question: str):
     system_prompt = load_system_prompt()
     context = build_context(results)
 
-    user_prompt = f"""
-Contexte récupéré (exemples similaires, définitions, documents) :
+    # Construction du prompt utilisateur avec la mémoire
+    memory_section = f"{memory_context}\n" if memory_context else ""
+    
+    user_prompt = f"""{memory_section}Contexte (exemples SQL, données disponibles):
 {context}
 
-Question utilisateur :
-{question}
-
-📌 INSTRUCTIONS PRIORITAIRES :
-
-1️⃣ Si la question est une DÉFINITION, CONCEPT, ou EXPLICATION (ex: "Qu'est-ce qu'un KPI?", "Définis X"):
-   → RÉPONDS DIRECTEMENT en utilisant le contexte fourni
-   → Ne génère PAS de SQL
-   → Utilise la section "Contexte récupéré" pour répondre
-   
-2️⃣ Si la question est une REQUÊTE DE BASE DE DONNÉES (comptages, listes, analyses):
-   → Génère une requête SQL Server valide
-   → Suis EXACTEMENT le format des exemples fournis
-   
-Contraintes OBLIGATOIRES (si tu génères du SQL):
-- SQL Server T-SQL UNIQUEMENT
-- Utiliser SELECT TOP N (JAMAIS LIMIT qui est PostgreSQL/MySQL)
-- Ne jamais inventer de colonnes
-- Retourner une seule requête SQL valide
-- Aucun commentaire, explication, ou texte
-- Aucun markdown, aucun ```sql
-- SQL uniquement
-""".strip()
+Question utilisateur:
+{question}""".strip()
     #Appel à Ollama
     payload = {
         "model": OLLAMA_MODEL,
