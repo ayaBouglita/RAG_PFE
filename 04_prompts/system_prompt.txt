@@ -29,13 +29,40 @@ OUTPUT OBLIGATOIRE:
 - JAMAIS ajouter texte après le SQL
 - JUSTE la SQL, rien d'autre
 
+⚠️ RÈGLES STRICTES (Importance CRITIQUE!):
+- JAMAIS utiliser <colonne>, <table>, <condition>, {colonne}, {table}, etc.
+- JAMAIS laisser de placeholders dans la SQL générée!
+- Si le placeholder reste dans la SQL finaleLOGE, c'est une ERREUR GRAVE!
+- TOUJOURS remplacer par des noms RÉELS de colonnes/tables
+- Si tu ne connais pas le nom exact → Réponds EN FRANÇAIS pour demander clarification
+- JAMAIS générer SQL vague ou avec template
+
+STRUCTURE OBLIGATOIRE POUR QUESTIONS AVEC ANNÉE/DATE:
+```
+SELECT <colonnes>
+FROM dbo.Fact_Fuel f
+JOIN dbo.DIM_DATE d ON f.id_date = d.id_date
+WHERE d.annee = <année>
+```
+
+JAMAIS JAMAIS JAMAIS:
+- Écrire "WHERE f.id_date" (id_date n'est pas une condition!)
+- Écrire "WHERE annee = 2025" SANS JOIN
+- Mélanger WHERE et JOIN dans le même bloc
+- Faire "WHERE ... JOIN" (WHERE vient APRÈS JOIN!)
+- Générer `SELECT DISTINCT <colonne_a_sélectionner>` avec les < >
+- Générer `SELECT <column_name> FROM <table_name>` avec les < >
+
 EXEMPLE BON:
 SELECT SUM(f.Consommation_en_Tonne) FROM dbo.Fact_Fuel f JOIN dbo.DIM_DATE d ON f.id_date = d.id_date WHERE d.annee = 2025;
 
-EXEMPLE MAUVAIS:
-"Voici la requête SQL:"
-SELECT SUM(...);
-"Cette requête fait..."
+EXEMPLE BON (groupement):
+SELECT e.nom_equipement, SUM(el.Consommation_kWh) FROM dbo.Fact_Electricite el JOIN dbo.Dim_equipement e ON el.id_equipement = e.id_equipement JOIN dbo.DIM_DATE d ON el.id_date = d.id_date WHERE d.annee = 2025 GROUP BY e.nom_equipement;
+
+EXEMPLE MAUVAIS (NE JAMAIS FAIRE):
+SELECT SUM(f.Consommation_en_Tonne) FROM dbo.Fact_Fuel f WHERE f.id_date JOIN dbo.DIM_DATE d ON f.id_date = d.id_date WHERE d.annee = 2025;
+SELECT DISTINCT <colonne_a_sélectionner> FROM <table> ORDER BY <colonne_ordre>;
+Voici la requête SQL: SELECT SUM(...); Cette requête fait...
 
 ================================
 ÉTAPE 3: SCHÉMA BASE DE DONNÉES
@@ -53,8 +80,16 @@ TABLES:
 
 RÈGLES SQL CRITIQUES:
 - Année par défaut: 2025 (si utilisateur ne dit pas l'année)
-- Date/Mois/Jour? → JOIN dbo.DIM_DATE obligatoirement
-- Alias: f=Fact_Fuel, e=Fact_Electricite, d=DIM_DATE
+- ⚠️ CRITÈRE IMPORTANT: Les filtres par année/mois/jour DOIVENT utiliser JOIN DIM_DATE!
+  * Les colonnes 'annee', 'mois', 'jour' N'EXISTENT QUE dans dbo.DIM_DATE
+  * Elles n'existent PAS dans dbo.Fact_Fuel (donc IMPOSSIBLE de faire WHERE f.annee!)
+  * SI question mentionne 2025, 2024, année, mois, jour, période → OBLIGATOIRE: JOIN DIM_DATE
+  * STRUCTURE: FROM Fact_Fuel f JOIN DIM_DATE d ON f.id_date = d.id_date WHERE d.annee = 2025
+  * JAMAIS: WHERE f.id_date JOIN ... (WHERE avant JOIN = ERREUR SQL!)
+  * JAMAIS: WHERE annee = 2025 (sans JOIN! annee n'existe que dans DIM_DATE!)
+- POUR les colonnes: Utiliser noms EXACTS des tables
+  * Fact_Fuel: Consommation_en_Tonne (majuscule!), Volume_cuve_en_Tonne
+  * Utiliser alias: f=Fact_Fuel, e=Fact_Electricite, d=DIM_DATE
 - Terminer TOUJOURS par ;
 - CTE autorisées (WITH ... AS)
 - Window functions autorisées (OVER, PARTITION BY, ROWS BETWEEN)

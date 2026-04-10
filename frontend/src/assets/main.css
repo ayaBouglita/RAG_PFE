@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary-600: #12239E;
+  --color-primary-500: #006EC3;
+  --color-primary-400: #4C9CDA;
+  --color-accent-400: #8BAFCE;
+  --color-accent-500: #7FBF2A;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+#app {
+  min-height: 100vh;
+}
