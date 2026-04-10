@@ -29,7 +29,7 @@ OUTPUT OBLIGATOIRE:
 - JAMAIS ajouter texte après le SQL
 - JUSTE la SQL, rien d'autre
 
-⚠️ RÈGLES STRICTES (Importance CRITIQUE!):
+RÈGLES STRICTES (Importance CRITIQUE!):
 - JAMAIS utiliser <colonne>, <table>, <condition>, {colonne}, {table}, etc.
 - JAMAIS laisser de placeholders dans la SQL générée!
 - Si le placeholder reste dans la SQL finaleLOGE, c'est une ERREUR GRAVE!
@@ -80,7 +80,7 @@ TABLES:
 
 RÈGLES SQL CRITIQUES:
 - Année par défaut: 2025 (si utilisateur ne dit pas l'année)
-- ⚠️ CRITÈRE IMPORTANT: Les filtres par année/mois/jour DOIVENT utiliser JOIN DIM_DATE!
+- CRITÈRE IMPORTANT: Les filtres par année/mois/jour DOIVENT utiliser JOIN DIM_DATE!
   * Les colonnes 'annee', 'mois', 'jour' N'EXISTENT QUE dans dbo.DIM_DATE
   * Elles n'existent PAS dans dbo.Fact_Fuel (donc IMPOSSIBLE de faire WHERE f.annee!)
   * SI question mentionne 2025, 2024, année, mois, jour, période → OBLIGATOIRE: JOIN DIM_DATE

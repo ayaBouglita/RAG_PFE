@@ -128,9 +128,15 @@ class RAGPipelineWithCharts:
         
         # RÉPARTITION (PIE CHART)
         elif chart_type == ChartType.PIE:
-            if resource_type == "electricity":
+            # Vérifier le comparison_field pour savoir quelle répartition faire
+            if comparison_field == "cuve":
+                return self.sql_builder.build_comparison_by_cuve()
+            elif comparison_field == "equipement":
+                return self.sql_builder.build_comparison_by_equipement()
+            elif resource_type == "electricity":
                 return self.sql_builder.build_comparison_by_equipement()
             else:
+                # Par défaut pour fuel: répartition par type
                 return self.sql_builder.build_repartition_by_type_fuel()
         
         # Fallback
@@ -151,39 +157,37 @@ class RAGPipelineWithCharts:
         columns = list(df_results.columns)
         numeric_cols = df_results.select_dtypes(include=['number']).columns.tolist()
         
+        # Filtrer les colonnes de date (ne pas les inclure comme données)
+        date_keywords = ['month_label', 'year_label', 'day_label', 'week_label', 
+                        'quarter_label', 'date_label', 'annee', 'mois', 'jour', 'semaine']
+        data_cols = [col for col in numeric_cols if not any(kw in col.lower() for kw in date_keywords)]
+        
         if chart_type == ChartType.LINE:
-            # Premier colonne = temps, autres = métriques
-            x_field = columns[0]
-            y_fields = numeric_cols if numeric_cols else [columns[1]] if len(columns) > 1 else []
-            title = metadata.get("chart_title", f"Évolution {x_field}")
+            # Utiliser la détection automatique - passer None pour auto-détecter
+            title = metadata.get("chart_title", "Évolution temporelle")
             unit = "tonne" if "Consommation_en_Tonne" in columns else "kWh"
             
             return self.chart_builder.build_line_chart(
-                data, x_field, y_fields, title, unit
+                data, None, None, title, unit
             )
         
         elif chart_type == ChartType.BAR:
-            # Premier colonne = catégorie, autres = métriques
-            category_field = columns[0]
-            value_fields = numeric_cols if numeric_cols else [columns[1]] if len(columns) > 1 else []
-            title = metadata.get("chart_title", f"Comparaison par {category_field}")
+            # Utiliser la détection automatique - passer None pour auto-détecter
+            title = metadata.get("chart_title", "Comparaison")
             unit = "tonne" if "Consommation_en_Tonne" in str(columns) else "kWh"
             
             return self.chart_builder.build_bar_chart(
-                data, category_field, value_fields, title, unit
+                data, None, None, title, unit
             )
         
         elif chart_type == ChartType.PIE:
-            # Premier colonne = catégorie, deuxième = valeur
-            category_field = columns[0]
-            value_field = columns[1] if len(columns) > 1 else numeric_cols[0] if numeric_cols else None
+            # Utiliser la détection automatique - passer None pour auto-détecter
             title = metadata.get("chart_title", "Répartition")
             unit = "tonne" if "Consommation_en_Tonne" in str(columns) else "kWh"
             
-            if value_field:
-                return self.chart_builder.build_pie_chart(
-                    data, category_field, value_field, title, unit
-                )
+            return self.chart_builder.build_pie_chart(
+                data, None, None, title, unit
+            )
         
         return None
 
