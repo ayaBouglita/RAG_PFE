@@ -3,20 +3,24 @@
     <!-- Header -->
     <div class="mb-4">
       <h3 class="text-lg font-semibold text-primary-600">📊 {{ chartConfig.title }}</h3>
-      <p class="text-sm text-gray-600">Unité: {{ chartConfig.unit || "N/A" }}</p>
+      <p class="text-sm text-primary-500">Unité: {{ chartConfig.unit || "N/A" }}</p>
     </div>
 
     <!-- Chart -->
-    <div class="mb-6 h-80 relative">
-      <canvas ref="chartCanvas"></canvas>
+    <div class="mb-6 relative bg-gray-50 p-4 rounded-lg" style="height: 400px;">
+      <canvas 
+        ref="chartCanvas"
+        style="display: block; width: 100% !important; height: 100% !important;"
+      ></canvas>
     </div>
 
     <!-- Statistiques -->
     <div v-if="chartConfig.statistics && Object.keys(chartConfig.statistics).length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div v-for="(stats, metric) in chartConfig.statistics" :key="metric" class="bg-gray-50 p-4 rounded-lg">
-        <h4 class="text-xs font-semibold text-gray-600 uppercase">{{ metric }}</h4>
-        <p class="text-lg font-bold text-primary-600">{{ formatNumber(stats.total) }}</p>
-        <p class="text-xs text-gray-500">Avg: {{ formatNumber(stats.moyenne) }}</p>
+      <div v-for="(stats, metric) in chartConfig.statistics" :key="metric" class="bg-primary-50 p-4 rounded-lg border-l-4 border-accent-500">
+        <h4 class="text-xs font-semibold text-primary-600 uppercase">{{ translateMetric(metric) }}</h4>
+        <p class="text-lg font-bold text-accent-500">{{ formatNumber(stats.total) }}</p>
+        <p class="text-xs text-primary-500">Moy: {{ formatNumber(stats.moyenne) }}</p>
+        <p class="text-xs text-primary-400 mt-1">Min: {{ formatNumber(stats.min) }} / Max: {{ formatNumber(stats.max) }}</p>
       </div>
     </div>
 
@@ -39,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 
 const props = defineProps({
@@ -72,22 +76,35 @@ watch(
 )
 
 const createChart = () => {
-  if (!chartCanvas.value || !props.chartConfig) return
+  if (!chartCanvas.value || !props.chartConfig) {
+    console.error('❌ Canvas ou config manquant')
+    return
+  }
 
-  const ctx = chartCanvas.value.getContext('2d')
-  const config = props.chartConfig
+  // Attendre que le DOM soit rendu
+  nextTick(() => {
+    try {
+      const canvas = chartCanvas.value
+      if (!canvas) return
 
-  const chartOptions = {
-    type: config.type,
-    data: config.data,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: 'index',
-        intersect: false
-      },
-      plugins: {
+      // Vérifier les dimensions
+      const rect = canvas.parentElement.getBoundingClientRect()
+      console.log('📏 Canvas parent dimensions:', { width: rect.width, height: rect.height })
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        console.error('❌ Impossible d\'obtenir le contexte 2D')
+        return
+      }
+
+      const config = props.chartConfig
+      console.log('📊 Chart config reçu:', {
+        type: config.type,
+        dataLabels: config.data?.labels?.length,
+        datasets: config.data?.datasets?.length
+      })
+
+      const mergedPlugins = {
         legend: {
           display: true,
           position: 'top'
@@ -99,13 +116,37 @@ const createChart = () => {
             size: 14,
             weight: 'bold'
           }
-        }
-      },
-      ...config.options
-    }
-  }
+        },
+        ...(config.options?.plugins || {})
+      }
 
-  chartInstance = new Chart(ctx, chartOptions)
+      const chartOptions = {
+        type: config.type,
+        data: config.data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: mergedPlugins,
+          ...(config.options ? Object.fromEntries(
+            Object.entries(config.options).filter(([key]) => key !== 'plugins')
+          ) : {})
+        }
+      }
+
+      console.log('✅ Création du graphique avec type:', config.type)
+      if (chartInstance) {
+        chartInstance.destroy()
+      }
+      chartInstance = new Chart(ctx, chartOptions)
+      console.log('✅ Graphique créé avec succès!')
+    } catch (error) {
+      console.error('❌ Erreur lors de la création du graphique:', error)
+    }
+  })
 }
 
 const formatNumber = (num) => {
@@ -114,6 +155,20 @@ const formatNumber = (num) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(num)
+}
+
+const translateMetric = (metric) => {
+  const translations = {
+    'total': 'Total',
+    'moyenne': 'Moyenne',
+    'min': 'Minimum',
+    'max': 'Maximum',
+    'average': 'Moyenne',
+    'items': 'Éléments',
+    'consommation': 'Consommation',
+    'sum': 'Somme'
+  }
+  return translations[metric.toLowerCase()] || metric
 }
 
 const downloadChart = () => {
