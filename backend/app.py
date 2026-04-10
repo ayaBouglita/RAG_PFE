@@ -8,10 +8,11 @@ from uuid import uuid4
 from datetime import datetime
 import os
 import sys
+import json
 import pandas as pd
 from dotenv import load_dotenv
 
-from database import create_tables, get_db, User, Conversation, Message
+from database import create_tables, migrate_add_chart_config, get_db, User, Conversation, Message
 from auth import hash_password, verify_password, create_access_token, verify_token
 
 load_dotenv()
@@ -79,6 +80,7 @@ class MessageResponse(BaseModel):
 @app.on_event("startup")
 def startup():
     create_tables()
+    migrate_add_chart_config()
     print(" API démarrée - Tables OK")
 
 
@@ -238,7 +240,8 @@ def chat_message(
             conversation_id=conv.id,
             role="assistant",
             content=response,
-            sql_query=sql_query
+            sql_query=sql_query,
+            chart_config=json.dumps(chart_config) if chart_config else None  # Sauvegarder le chart_config en JSON
         )
         
         db.add(msg_user)
@@ -289,16 +292,23 @@ def get_conversation_messages(conversation_id: str, authorization: HTTPAuthoriza
         Message.conversation_id == conversation_id
     ).order_by(Message.created_at.asc()).all()
     
-    message_list = [
-        {
+    message_list = []
+    for msg in messages:
+        chart_config = None
+        if msg.chart_config:
+            try:
+                chart_config = json.loads(msg.chart_config)
+            except:
+                chart_config = None
+        
+        message_list.append({
             "id": msg.id,
             "role": msg.role,
             "content": msg.content,
             "sql_query": msg.sql_query,
+            "chart_config": chart_config,
             "created_at": msg.created_at
-        }
-        for msg in messages
-    ]
+        })
     
     return {
         "conversation_id": conversation_id,

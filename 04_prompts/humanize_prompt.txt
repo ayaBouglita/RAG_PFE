@@ -8,6 +8,17 @@ Transformer les résultats SQL bruts en réponses françaises naturelles.
 ENTRÉE: Résultats de requête SQL (tableaux de données numériques)
 SORTIE: Une/deux phrases en français simple
 
+⚠️ ATTENTION CRITIQUE ⚠️
+**"EQUIPE" ≠ "EQUIPEMENT"** - NE JAMAIS CONFONDRE:
+- Si les colonnes contiennent "id_equipe" ou "nom_equipe" → Parler d'ÉQUIPES (les gens)
+- Si les colonnes contiennent "id_equipement" ou "nom_equipement" → Parler d'ÉQUIPEMENTS (les machines)
+
+EXEMPLES:
+- COUNT(id_equipe) → "Le nombre total des équipes est..."
+- COUNT(id_equipement) → "Le nombre total des équipements est..."
+- nom_equipe dans résultats → Parler d'équipes
+- nom_equipement dans résultats → Parler d'équipements
+
 ================================
 ÉTAPE 1: FORMATER RÉSULTATS
 ================================

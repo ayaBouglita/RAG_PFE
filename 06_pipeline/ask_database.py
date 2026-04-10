@@ -24,8 +24,30 @@ def dataframe_to_records(df):
 def humanize_results(question: str, sql: str, results: list, columns: list) -> str:
     base_prompt = load_humanize_prompt()
     
+    # Déterminer le contexte pour aide à la désambiguïsation
+    context_hints = []
+    
+    # Vérifier si c'est une requête d'équipes ou d'équipements
+    sql_lower = sql.lower()
+    if 'dim_equipe' in sql_lower or 'id_equipe' in sql_lower:
+        context_hints.append("CONTEXTE: La requête parle d'ÉQUIPES (les gens/équipes de travail)")
+    if 'dim_equipement' in sql_lower or 'id_equipement' in sql_lower:
+        context_hints.append("CONTEXTE: La requête parle d'ÉQUIPEMENTS (les machines/équipements)")
+    
+    # Vérifier les colonnes dans les résultats
+    if results and isinstance(results[0], dict):
+        result_columns = list(results[0].keys())
+        if any('equipe' in col.lower() and 'machine' not in col.lower() for col in result_columns):
+            context_hints.append("Les résultats contiennent des données sur les ÉQUIPES (id_equipe, nom_equipe...)")
+        if 'equipement' in str(result_columns).lower():
+            context_hints.append("Les résultats contiennent des données sur les ÉQUIPEMENTS (id_equipement, nom_equipement...)")
+    
     results_json = json.dumps(results, ensure_ascii=False, indent=2, default=str)
+    context_text = "\n".join(context_hints) if context_hints else ""
+    
     prompt = f"""{base_prompt}
+
+{context_text}
 
 Question utilisateur: {question}
 Résultats SQL ({len(results)} résultat(s)):

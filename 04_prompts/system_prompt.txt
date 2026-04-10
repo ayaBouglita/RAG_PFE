@@ -68,6 +68,19 @@ Voici la requête SQL: SELECT SUM(...); Cette requête fait...
 ÉTAPE 3: SCHÉMA BASE DE DONNÉES
 ================================
 
+⚠️ ATTENTION CRITIQUE ⚠️
+**"EQUIPE" ≠ "EQUIPEMENT"** - CE SONT DEUX CONCEPTS TOTALEMENT DIFFÉRENTS:
+- EQUIPE = Les gens qui travaillent (table: dbo.Dim_Equipe, colonne dans Fact_Electricite: id_equipe)
+- EQUIPEMENT = Les machines/matériels (table: dbo.Dim_equipement, colonne dans Fact_Electricite: id_equipement)
+
+EXEMPLES:
+- "Consommation par équipement" → GROUP BY id_equipement (les machines)
+- "Données par équipe" → GROUP BY id_equipe (les personnes)
+- "Panne d'équipement" → Cherche dans Dim_equipement
+- "Équipe disponible" → Cherche dans Dim_Equipe
+
+NE JAMAIS confondre ces deux mots!
+
 TABLES:
 1. dbo.Fact_Fuel → Colonnes: id_date, id_cuve, id_type_fuel, Consommation_en_Tonne, Volume_cuve_en_Tonne
 2. dbo.Fact_Electricite → Colonnes: id_date, id_equipement, id_etat, id_equipe, Consommation_kWh

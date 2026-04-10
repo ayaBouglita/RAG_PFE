@@ -55,6 +55,7 @@ class Message(Base):
     role = Column(String(20))
     content = Column(Text)
     sql_query = Column(Text, nullable=True)
+    chart_config = Column(Text, nullable=True)  # Stocker le JSON du graphique
     created_at = Column(DateTime, default=datetime.utcnow)
     
     conversation = relationship("Conversation", back_populates="messages")
@@ -71,3 +72,30 @@ def get_db():
 def create_tables():
     """Créer les tables si elles n'existent pas"""
     Base.metadata.create_all(bind=engine)
+
+
+def migrate_add_chart_config():
+    """Ajouter la colonne chart_config si elle n'existe pas"""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            # Vérifier si la colonne existe déjà
+            result = conn.execute(text("""
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'app_messages' 
+                AND COLUMN_NAME = 'chart_config'
+            """))
+            if result.fetchone():
+                print("✓ Colonne chart_config existe déjà")
+                return
+            
+            # Ajouter la colonne si elle n'existe pas
+            conn.execute(text("""
+                ALTER TABLE app_messages
+                ADD chart_config TEXT NULL
+            """))
+            conn.commit()
+            print("✓ Colonne chart_config ajoutée avec succès")
+        except Exception as e:
+            print(f"⚠ Migration chart_config: {e}")
