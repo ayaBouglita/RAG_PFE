@@ -13,6 +13,7 @@ from generate_sql_ollama import generate_sql
 from run_query import execute_select_query
 from retrieve import Retriever
 from generate_chart import ChartDataBuilder
+from detect_temporal import detect_chart_type, ChartType
 import json
 
 from database import User, Conversation, Message, get_db
@@ -271,12 +272,29 @@ def chat_message(
         chart_config_str = None
         if isinstance(results, list) and len(results) > 0:
             try:
-                # Essayer de générer un pie chart par défaut
-                chart_config = ChartDataBuilder.build_pie_chart(
-                    data=results,
-                    title="Répartition des données",
-                    unit="kWh"
-                )
+                # Détecter le type de graphique approprié
+                chart_type, metadata = detect_chart_type(message_data.message)
+                title = metadata.get("chart_title", "Répartition des données")
+                
+                # Générer le graphique selon le type détecté
+                if chart_type == ChartType.BAR:
+                    chart_config = ChartDataBuilder.build_bar_chart(
+                        data=results,
+                        title=title,
+                        unit="kWh"
+                    )
+                elif chart_type == ChartType.LINE:
+                    chart_config = ChartDataBuilder.build_line_chart(
+                        data=results,
+                        title=title,
+                        unit="kWh"
+                    )
+                else:  # PIE ou NONE par défaut
+                    chart_config = ChartDataBuilder.build_pie_chart(
+                        data=results,
+                        title=title,
+                        unit="kWh"
+                    )
                 chart_config_str = json.dumps(chart_config, ensure_ascii=False)
             except Exception as chart_err:
                 print(f"⚠️  Impossible de générer le graphique: {str(chart_err)}")
