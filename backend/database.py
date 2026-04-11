@@ -30,6 +30,7 @@ class User(Base):
     username = Column(String(100), unique=True, index=True)
     email = Column(String(255), unique=True, index=True)
     password_hash = Column(String(255))
+    role = Column(String(20), default="user")  # "admin" ou "user"
     created_at = Column(DateTime, default=datetime.utcnow)
     
     conversations = relationship("Conversation", back_populates="user")

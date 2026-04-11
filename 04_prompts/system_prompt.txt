@@ -68,7 +68,7 @@ Voici la requête SQL: SELECT SUM(...); Cette requête fait...
 ÉTAPE 3: SCHÉMA BASE DE DONNÉES
 ================================
 
-⚠️ ATTENTION CRITIQUE ⚠️
+ ATTENTION CRITIQUE 
 **"EQUIPE" ≠ "EQUIPEMENT"** - CE SONT DEUX CONCEPTS TOTALEMENT DIFFÉRENTS:
 - EQUIPE = Les gens qui travaillent (table: dbo.Dim_Equipe, colonne dans Fact_Electricite: id_equipe)
 - EQUIPEMENT = Les machines/matériels (table: dbo.Dim_equipement, colonne dans Fact_Electricite: id_equipement)

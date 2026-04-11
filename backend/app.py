@@ -121,11 +121,12 @@ def register(data: UserCreate, db = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Username ou email existe")
     
-    # Créer l'utilisateur
+    # Créer l'utilisateur avec le rôle "user" par défaut
     user = User(
         username=data.username,
         email=data.email,
-        password_hash=hash_password(data.password)
+        password_hash=hash_password(data.password),
+        role="user"  # Explicitement "user" et pas NULL
     )
     db.add(user)
     db.commit()
@@ -135,6 +136,7 @@ def register(data: UserCreate, db = Depends(get_db)):
         "id": user.id,
         "username": user.username,
         "email": user.email,
+        "role": user.role if user.role else "user",  # Fallback si NULL
         "message": "Utilisateur créé"
     }
 
@@ -156,7 +158,8 @@ def login(data: LoginRequest, db = Depends(get_db)):
         "user": {
             "id": user.id,
             "username": user.username,
-            "email": user.email
+            "email": user.email,
+            "role": user.role if user.role else "user"  # Afficher "user" si NULL
         }
     }
 
@@ -319,6 +322,235 @@ def get_conversation_messages(conversation_id: str, authorization: HTTPAuthoriza
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ======== ADMIN ROUTES ========
+def get_current_user_from_token(authorization: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Extraire l'utilisateur du token JWT"""
+    try:
+        token = authorization.credentials
+        payload = verify_token(token)
+        
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user_id = payload.get("user_id")
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return user
+    except AttributeError:
+        raise HTTPException(status_code=401, detail="No authorization header provided")
+
+
+def verify_admin(user: User = Depends(get_current_user_from_token)):
+    """Vérifier que l'utilisateur est admin"""
+    if not user or user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
+@app.get("/api/admin/users")
+def list_users(user: User = Depends(verify_admin), db: Session = Depends(get_db)):
+    """Lister tous les utilisateurs (Admin only)"""
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role if u.role else "user",  # Afficher "user" si NULL
+            "created_at": u.created_at
+        }
+        for u in users
+    ]
+
+
+@app.post("/api/admin/users")
+def create_user_admin(
+    data: UserCreate,
+    user: User = Depends(verify_admin),
+    db: Session = Depends(get_db)
+):
+    """Créer un utilisateur (Admin only)"""
+    # Vérifier si l'utilisateur existe déjà
+    existing = db.query(User).filter(
+        (User.username == data.username) | (User.email == data.email)
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Username ou email déjà utilisé")
+    
+    new_user = User(
+        username=data.username,
+        email=data.email,
+        password_hash=hash_password(data.password),
+        role="user"
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role,
+        "created_at": new_user.created_at
+    }
+
+
+class UserUpdate(BaseModel):
+    username: str = None
+    email: str = None
+    role: str = None
+
+
+@app.put("/api/admin/users/{user_id}")
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    admin: User = Depends(verify_admin),
+    db: Session = Depends(get_db)
+):
+    """Modifier un utilisateur (Admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if data.username:
+        # Vérifier que le nouveau username n'existe pas
+        existing = db.query(User).filter(
+            (User.username == data.username) & (User.id != user_id)
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Username déjà utilisé")
+        user.username = data.username
+    
+    if data.email:
+        # Vérifier que le nouvel email n'existe pas
+        existing = db.query(User).filter(
+            (User.email == data.email) & (User.id != user_id)
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email déjà utilisé")
+        user.email = data.email
+    
+    if data.role:
+        if data.role not in ["admin", "user"]:
+            raise HTTPException(status_code=400, detail="Rôle invalide")
+        user.role = data.role
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role if user.role else "user",  # Afficher "user" si NULL
+        "created_at": user.created_at
+    }
+
+
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(
+    user_id: int,
+    admin: User = Depends(verify_admin),
+    db: Session = Depends(get_db)
+):
+    """Supprimer un utilisateur (Admin only)"""
+    # Empêcher la suppression de l'admin lui-même
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Impossible de supprimer votre propre compte")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Supprimer les conversations et messages associés
+    conversations = db.query(Conversation).filter(Conversation.user_id == user_id).all()
+    for conv in conversations:
+        db.query(Message).filter(Message.conversation_id == conv.id).delete()
+    
+    db.query(Conversation).filter(Conversation.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "User deleted successfully"}
+
+
+@app.get("/api/admin/stats")
+def get_stats(admin: User = Depends(verify_admin), db: Session = Depends(get_db)):
+    """Obtenir les statistiques système (Admin only)"""
+    try:
+        from sqlalchemy import func
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info("Getting admin stats...")
+        
+        # Total d'utilisateurs
+        total_users = db.query(User).count()
+        admin_count = db.query(User).filter(User.role == "admin").count()
+        
+        # Compter "user" ET les valeurs NULL (qui sont des utilisateurs normaux)
+        user_count = db.query(User).filter(
+            (User.role == "user") | (User.role.is_(None))
+        ).count()
+        
+        logger.info(f"Stats: total={total_users}, admins={admin_count}, users={user_count}")
+        
+        # Inscriptions par date - simple version
+        try:
+            registrations = db.query(
+                func.CAST(func.DATE(User.created_at), String).label("date"),
+                func.count(User.id).label("count")
+            ).group_by(func.CAST(func.DATE(User.created_at), String)).order_by(func.CAST(func.DATE(User.created_at), String)).all()
+            
+            registrations_by_date = [
+                {"date": str(reg.date), "count": reg.count}
+                for reg in registrations
+            ]
+            logger.info(f"Registrations by date: {registrations_by_date}")
+        except Exception as e:
+            logger.error(f"Error getting registrations by date: {e}")
+            # Si l'erreur DATE pose problème, essayer une approche alternative
+            try:
+                all_users = db.query(User).all()
+                registrations_by_date = []
+                # Group by date manually
+                from collections import defaultdict
+                from datetime import date
+                
+                dates_dict = defaultdict(int)
+                for user in all_users:
+                    if user.created_at:
+                        user_date = user.created_at.date() if hasattr(user.created_at, 'date') else user.created_at
+                        dates_dict[str(user_date)] += 1
+                
+                registrations_by_date = [
+                    {"date": date_str, "count": count}
+                    for date_str, count in sorted(dates_dict.items())
+                ]
+            except Exception as e2:
+                logger.error(f"Error in fallback registrations: {e2}")
+                registrations_by_date = []
+        
+        return {
+            "total_users": total_users,
+            "admin_count": admin_count,
+            "user_count": user_count,
+            "registrations_by_date": registrations_by_date
+        }
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in get_stats: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
 
 
 if __name__ == "__main__":

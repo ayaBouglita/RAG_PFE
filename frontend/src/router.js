@@ -4,6 +4,8 @@ import { useAuthStore } from './stores/auth.js'
 import LoginPage from './pages/LoginPage.vue'
 import RegisterPage from './pages/RegisterPage.vue'
 import ChatPage from './pages/ChatPage.vue'
+import AdminPanel from './pages/AdminPanel.vue'
+import AdminStats from './pages/AdminStats.vue'
 
 const routes = [
   {
@@ -25,6 +27,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/users',
+    name: 'AdminPanel',
+    component: AdminPanel,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/stats',
+    name: 'AdminStats',
+    component: AdminStats,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/',
     redirect: () => {
       const authStore = useAuthStore()
@@ -44,6 +58,8 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/chat')
   } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
     next('/chat')
   } else {

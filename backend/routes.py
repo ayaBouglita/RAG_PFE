@@ -31,6 +31,28 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    role: str
+
+
+class UserUpdate(BaseModel):
+    username: str = None
+    email: str = None
+    role: str = None
+
+
+class UserFullResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    created_at: datetime
+
+
+class AdminStatsResponse(BaseModel):
+    total_users: int
+    admin_count: int
+    user_count: int
+    registrations_by_date: list
 
 
 class LoginRequest(BaseModel):
@@ -144,6 +166,14 @@ def get_current_user(token: str, db: Session):
     return user
 
 
+def get_admin_user(token: str, db: Session):
+    """Extraire et vérifier que c'est un administrateur"""
+    user = get_current_user(token, db)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
 # ======== AUTH ENDPOINTS ========
 @router.post("/register", response_model=UserResponse)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -156,6 +186,48 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     
     if existing:
         raise HTTPException(status_code=400, detail="Username ou email déjà utilisé")
+    
+    # Créer le nouvel utilisateur avec le rôle "user" par défaut
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role="user"
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role
+    }
+
+
+@router.post("/login", response_model=LoginResponse)
+def login(creds: LoginRequest, db: Session = Depends(get_db)):
+    """Authentifier un utilisateur et retourner un token"""
+    
+    user = db.query(User).filter(User.username == creds.username).first()
+    
+    if not user or not verify_password(creds.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Identifiants invalides")
+    
+    token = create_access_token({"user_id": user.id})
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role
+        }
+    }
 
 
 @router.post("/chat/message", response_model=MessageResponse)
@@ -217,3 +289,167 @@ def chat_message(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+
+
+# ======== ADMIN ENDPOINTS ========
+@router.get("/admin/users", response_model=list[UserFullResponse])
+def list_users(token: str = None, db: Session = Depends(get_db)):
+    """Lister tous les utilisateurs (Admin only)"""
+    admin = get_admin_user(token, db)
+    
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role,
+            "created_at": u.created_at
+        }
+        for u in users
+    ]
+
+
+@router.post("/admin/users", response_model=UserFullResponse)
+def create_user_admin(
+    user_data: UserCreate,
+    token: str = None,
+    db: Session = Depends(get_db)
+):
+    """Créer un utilisateur (Admin only)"""
+    admin = get_admin_user(token, db)
+    
+    # Vérifier si l'utilisateur existe déjà
+    existing = db.query(User).filter(
+        (User.username == user_data.username) | (User.email == user_data.email)
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Username ou email déjà utilisé")
+    
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role="user"
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role,
+        "created_at": new_user.created_at
+    }
+
+
+@router.put("/admin/users/{user_id}", response_model=UserFullResponse)
+def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    token: str = None,
+    db: Session = Depends(get_db)
+):
+    """Modifier un utilisateur (Admin only)"""
+    admin = get_admin_user(token, db)
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_data.username:
+        # Vérifier que le nouveau username n'existe pas
+        existing = db.query(User).filter(
+            (User.username == user_data.username) & (User.id != user_id)
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Username déjà utilisé")
+        user.username = user_data.username
+    
+    if user_data.email:
+        # Vérifier que le nouvel email n'existe pas
+        existing = db.query(User).filter(
+            (User.email == user_data.email) & (User.id != user_id)
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email déjà utilisé")
+        user.email = user_data.email
+    
+    if user_data.role:
+        if user_data.role not in ["admin", "user"]:
+            raise HTTPException(status_code=400, detail="Rôle invalide")
+        user.role = user_data.role
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "created_at": user.created_at
+    }
+
+
+@router.delete("/admin/users/{user_id}")
+def delete_user(
+    user_id: int,
+    token: str = None,
+    db: Session = Depends(get_db)
+):
+    """Supprimer un utilisateur (Admin only)"""
+    admin = get_admin_user(token, db)
+    
+    # Empêcher la suppression de l'admin lui-même
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Impossible de supprimer votre propre compte")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Supprimer les conversations et messages associés
+    conversations = db.query(Conversation).filter(Conversation.user_id == user_id).all()
+    for conv in conversations:
+        db.query(Message).filter(Message.conversation_id == conv.id).delete()
+    
+    db.query(Conversation).filter(Conversation.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "User deleted successfully"}
+
+
+@router.get("/admin/stats", response_model=AdminStatsResponse)
+def get_stats(token: str = None, db: Session = Depends(get_db)):
+    """Obtenir les statistiques système (Admin only)"""
+    admin = get_admin_user(token, db)
+    
+    # Total d'utilisateurs
+    total_users = db.query(User).count()
+    admin_count = db.query(User).filter(User.role == "admin").count()
+    user_count = db.query(User).filter(User.role == "user").count()
+    
+    # Inscriptions par date
+    from sqlalchemy import func
+    registrations = db.query(
+        func.DATE(User.created_at).label("date"),
+        func.count(User.id).label("count")
+    ).group_by(func.DATE(User.created_at)).order_by(func.DATE(User.created_at)).all()
+    
+    registrations_by_date = [
+        {"date": str(reg.date), "count": reg.count}
+        for reg in registrations
+    ]
+    
+    return {
+        "total_users": total_users,
+        "admin_count": admin_count,
+        "user_count": user_count,
+        "registrations_by_date": registrations_by_date
+    }
