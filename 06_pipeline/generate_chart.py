@@ -244,7 +244,7 @@ class ChartDataBuilder:
                         "beginAtZero": True,
                         "title": {
                             "display": True,
-                            "text": f"Montant ({unit})",
+                            "text": f"Consommation ({unit})",
                             "color": "rgb(18, 35, 158)"
                         },
                         "ticks": {
@@ -400,7 +400,7 @@ class ChartDataBuilder:
                         "beginAtZero": True,
                         "title": {
                             "display": True,
-                            "text": f"Montant ({unit})",
+                            "text": f"Consommation ({unit})",
                             "color": "rgb(18, 35, 158)"
                         },
                         "ticks": {
