@@ -65,7 +65,7 @@ Humanise cette réponse maintenant."""
             OLLAMA_URL,
             headers={"Content-Type": "application/json"},
             data=json.dumps(payload),
-            timeout=120
+            timeout=300
         )
         response.raise_for_status()
         data = response.json()
@@ -103,7 +103,7 @@ Sois concis. Réponse naturelle uniquement."""
             OLLAMA_URL,
             headers={"Content-Type": "application/json"},
             data=json.dumps(payload),
-            timeout=120
+            timeout=300
         )
         response.raise_for_status()
         data = response.json()

@@ -2,7 +2,12 @@
   <div class="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
     <!-- Header -->
     <div class="p-4 border-b border-gray-200">
-      <h1 class="text-xl font-bold text-primary-600 mb-4">💬 Conversations</h1>
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H4l-3 3V5z"/>
+        </svg>
+        <h1 class="text-xl font-bold text-primary-600">Conversations</h1>
+      </div>
       <button
         @click="openNewConversation"
         class="w-full bg-accent-500 hover:bg-accent-400 text-white font-semibold py-2 rounded-lg transition-colors"
@@ -61,9 +66,12 @@
     <div class="p-4 border-t border-gray-200">
       <button
         @click="logout"
-        class="w-full px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+        class="w-full flex items-center justify-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
       >
-        🚪 Déconnexion
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+        </svg>
+        Déconnexion
       </button>
     </div>
   </div>
