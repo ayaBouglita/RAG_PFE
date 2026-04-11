@@ -12,6 +12,8 @@ from ask_database import humanize_results
 from generate_sql_ollama import generate_sql
 from run_query import execute_select_query
 from retrieve import Retriever
+from generate_chart import ChartDataBuilder
+import json
 
 from database import User, Conversation, Message, get_db
 from auth import hash_password, verify_password, create_access_token, verify_token
@@ -75,6 +77,7 @@ class MessageResponse(BaseModel):
     user_message: str
     assistant_response: str
     sql_query: str
+    chart_config: dict = None
 
 
 class ConversationCreate(BaseModel):
@@ -86,6 +89,7 @@ class MessageListItem(BaseModel):
     role: str
     content: str
     sql_query: str = None
+    chart_config: dict = None
     created_at: datetime
 
 
@@ -137,6 +141,7 @@ def get_conversation_messages(
             role=msg.role,
             content=msg.content,
             sql_query=msg.sql_query,
+            chart_config=json.loads(msg.chart_config) if msg.chart_config else None,
             created_at=msg.created_at
         )
         for msg in messages
@@ -261,6 +266,21 @@ def chat_message(
         else:
             response = "Aucun résultat trouvé"
         
+        # Générer le chart_config
+        chart_config = None
+        chart_config_str = None
+        if isinstance(results, list) and len(results) > 0:
+            try:
+                # Essayer de générer un pie chart par défaut
+                chart_config = ChartDataBuilder.build_pie_chart(
+                    data=results,
+                    title="Répartition des données",
+                    unit="kWh"
+                )
+                chart_config_str = json.dumps(chart_config, ensure_ascii=False)
+            except Exception as chart_err:
+                print(f"⚠️  Impossible de générer le graphique: {str(chart_err)}")
+        
         # Sauvegarder les messages en DB
         user_msg = Message(
             id=str(uuid4()),
@@ -274,7 +294,8 @@ def chat_message(
             conversation_id=conversation.id,
             role="assistant",
             content=response,
-            sql_query=sql_query
+            sql_query=sql_query,
+            chart_config=chart_config_str
         )
         
         db.add(user_msg)
@@ -284,7 +305,8 @@ def chat_message(
         return {
             "user_message": message_data.message,
             "assistant_response": response,
-            "sql_query": sql_query
+            "sql_query": sql_query,
+            "chart_config": chart_config
         }
         
     except Exception as e:

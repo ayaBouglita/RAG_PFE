@@ -102,7 +102,7 @@ Question utilisateur:
         OLLAMA_URL,
         headers={"Content-Type": "application/json"},
         data=json.dumps(payload),
-        timeout=300
+        timeout=120
     )
     response.raise_for_status() #Vérification HTTP
 

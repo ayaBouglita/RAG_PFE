@@ -534,9 +534,12 @@ class ChartDataBuilder:
                 }
             },
             "statistics": {
-                "total": total,
-                "average": total / len(values) if values else 0,
-                "items": len(values)
+                "total": {
+                    "total": total,
+                    "moyenne": total / len(values) if values else 0,
+                    "min": min(values) if values else 0,
+                    "max": max(values) if values else 0
+                }
             }
         }
 
